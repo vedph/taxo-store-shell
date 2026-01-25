@@ -1,0 +1,108 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>
+      <h2>TaxoStore Picker</h2>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <!-- Tree selection -->
+    <div class="tree-selector">
+      <mat-form-field>
+        @if (availableTrees().length > 0) {
+          <mat-select [formControl]="treeIdControl">
+            @for (tree of availableTrees(); track tree.id) {
+              <mat-option [value]="tree.id">{{ tree.name }} ({{ tree.id }})</mat-option>
+            }
+          </mat-select>
+        } @else {
+          <input matInput [formControl]="treeIdControl" placeholder="tree ID" />
+        }
+        @if (treeIdControl.hasError('required')) {
+          <mat-error>Tree ID is required</mat-error>
+        }
+      </mat-form-field>
+
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        [disabled]="treeIdControl.invalid || loading()"
+        (click)="selectTree()"
+      >
+        load tree
+      </button>
+
+      @if (selectedTreeId()) {
+        <button type="button" mat-button (click)="clearSelection()">Clear</button>
+      }
+    </div>
+
+    <!-- Tree picker -->
+    @if (selectedTreeId(); as treeId) {
+      <div class="picker-container">
+        <ts-taxo-store-picker
+          [treeId]="treeId"
+          [hasTopNodeFilter]="true"
+          [hasFlagsFilter]="true"
+          [availableFlags]="availableFlags"
+          [canEdit]="true"
+          [canAdd]="true"
+          [canDelete]="true"
+          [label]="'search node'"
+          (nodePick)="onNodePick($event)"
+        />
+      </div>
+
+      <!-- Picked node display -->
+      @if (pickedNode(); as node) {
+        <div class="picked-node">
+          <h3>Picked Node</h3>
+          <dl>
+            <div>
+              <dt>ID</dt>
+              <dd>{{ node.id }}</dd>
+            </div>
+            <div>
+              <dt>Key</dt>
+              <dd>{{ node.key }}</dd>
+            </div>
+            <div>
+              <dt>Label</dt>
+              <dd>{{ node.label }}</dd>
+            </div>
+            <div>
+              <dt>Filtered Label</dt>
+              <dd>{{ node.filteredLabel }}</dd>
+            </div>
+            @if (node.parentId !== undefined) {
+              <div>
+                <dt>Parent ID</dt>
+                <dd>{{ node.parentId }}</dd>
+              </div>
+            }
+            @if (node.flags) {
+              <div>
+                <dt>Flags</dt>
+                <dd>{{ node.flags }}</dd>
+              </div>
+            }
+            @if (node.note) {
+              <div>
+                <dt>Note</dt>
+                <dd>{{ node.note }}</dd>
+              </div>
+            }
+            @if (node.y !== undefined) {
+              <div>
+                <dt>Position</dt>
+                <dd>x={{ node.x }}, y={{ node.y }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+      }
+    } @else {
+      <p class="hint">Select a tree to start picking nodes.</p>
+    }
+  </mat-card-content>
+</mat-card>

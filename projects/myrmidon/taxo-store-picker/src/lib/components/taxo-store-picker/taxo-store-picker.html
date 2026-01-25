@@ -1,0 +1,105 @@
+<div class="tree-store-picker">
+  <!-- Lookup row -->
+  <div class="form-row">
+    <!-- RefLookupComponent for quick node search -->
+    <cadmus-refs-lookup
+      class="lookup"
+      [service]="lookupService"
+      [label]="label()"
+      [baseFilter]="lookupFilter()"
+      [options]="lookupOptions()"
+      (itemChange)="onLookupItemChange($any($event))"
+    />
+
+    <!-- Top node filter (parentKey) -->
+    @if (hasTopNodeFilter() && topNodes().length > 0) {
+      <mat-form-field class="top-node-select">
+        <mat-label>category</mat-label>
+        <mat-select
+          [value]="selectedTopNodeKey()"
+          (selectionChange)="onTopNodeChange($event.value)"
+        >
+          <mat-option [value]="null">(any)</mat-option>
+          @for (node of topNodes(); track node.id) {
+            <mat-option [value]="node.key">{{ node.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <!-- Flags filter -->
+    @if (showFlagsFilter()) {
+      <!-- Flag match mode -->
+      <mat-form-field class="flag-mode-select">
+        <mat-label>flag match</mat-label>
+        <mat-select
+          [value]="selectedFlagMatchMode()"
+          (selectionChange)="onFlagMatchModeChange($event.value)"
+        >
+          @for (mode of flagMatchModes; track mode.value) {
+            <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Flags multi-select -->
+      <mat-form-field class="flags-select">
+        <mat-label>flags</mat-label>
+        <mat-select
+          multiple
+          [value]="selectedFlags()"
+          (selectionChange)="onFlagsChange($event.value)"
+        >
+          @for (flag of availableFlags(); track flag.id) {
+            <mat-option [value]="flag.id">{{ flag.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Clear flags button -->
+      @if (selectedFlags().length > 0) {
+        <button type="button" mat-icon-button matTooltip="Clear flags" (click)="clearFlags()">
+          <mat-icon>clear</mat-icon>
+        </button>
+      }
+    }
+
+    <!-- Expander toggle button -->
+    <button
+      type="button"
+      mat-icon-button
+      matTooltip="Toggle tree editor"
+      (click)="expanded.set(!expanded())"
+    >
+      @if (expanded()) {
+        <mat-icon class="mat-primary">expand_less</mat-icon>
+      } @else {
+        <mat-icon class="mat-primary">expand_more</mat-icon>
+      }
+    </button>
+  </div>
+
+  <!-- Tree store editor expansion panel -->
+  @if (treeId()) {
+    <mat-expansion-panel
+      [expanded]="expanded()"
+      (expandedChange)="expanded.set($event)"
+      [hideToggle]="true"
+    >
+      <mat-expansion-panel-header>
+        <mat-panel-title>Tree Editor</mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <ts-taxo-store-editor
+        [treeId]="treeId()!"
+        [canPick]="true"
+        [canEdit]="canEdit()"
+        [canAdd]="canAdd()"
+        [canDelete]="canDelete()"
+        [hideLoc]="hideLoc()"
+        [hideFilter]="hideFilter()"
+        (nodePick)="onEditorNodePick($event)"
+      />
+    </mat-expansion-panel>
+  }
+</div>

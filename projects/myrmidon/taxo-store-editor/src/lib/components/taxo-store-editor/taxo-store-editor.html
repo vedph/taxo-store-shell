@@ -1,0 +1,112 @@
+<div class="tree-store-editor">
+  <!-- Global filter -->
+  <div class="filter-section">
+    <ts-taxo-store-node-filter [filter]="filter$ | async" (filterChange)="onFilterChange($event)" />
+  </div>
+
+  <!-- Tree view -->
+  <div class="tree-section">
+    <!-- Loading indicator -->
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Loading tree data"></mat-progress-bar>
+    }
+
+    @if (nodes$ | async; as nodes) {
+      <div class="tree-nodes" role="tree">
+        @for (node of nodes; track node.id; let i = $index) {
+          <div class="tree-node-row" role="treeitem" [attr.aria-expanded]="node.expanded">
+            <pdb-browser-tree-node
+              [node]="node"
+              [paging]="getPagingForNode(nodes, i)"
+              [hideLoc]="hideLoc()"
+              [hideFilter]="hideFilter()"
+              (toggleExpandedRequest)="onToggleExpanded($any($event))"
+              (changePageRequest)="onPageChangeRequest($event)"
+              (editNodeFilterRequest)="onEditFilterRequest($any($event))"
+            >
+              <!-- Node actions -->
+              <span class="node-actions">
+                @if (node.flags) {
+                  <span class="node-flags" [attr.aria-label]="'Flags: ' + node.flags">
+                    {{ node.flags }}
+                  </span>
+                }
+
+                @if (canPick()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Pick this node"
+                    aria-label="Pick this node"
+                    (click)="pickNode(node)"
+                    class="primary-btn"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                }
+
+                @if (canEdit()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Edit this node"
+                    aria-label="Edit this node"
+                    (click)="editNode(node)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                }
+
+                @if (canAdd()) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Add child node"
+                    aria-label="Add child node"
+                    (click)="addChildNode(node)"
+                  >
+                    <mat-icon>subdirectory_arrow_right</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Add sibling node"
+                    aria-label="Add sibling node"
+                    (click)="addSiblingNode(node)"
+                  >
+                    <mat-icon>add</mat-icon>
+                  </button>
+                }
+
+                @if (canDelete() && node.hasChildren === false) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Delete this node"
+                    aria-label="Delete this node"
+                    class="delete-btn"
+                    (click)="deleteNode(node)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </span>
+            </pdb-browser-tree-node>
+          </div>
+        }
+      </div>
+
+      @if (nodes.length === 0) {
+        <p class="empty-message">No nodes found.</p>
+      }
+    }
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button type="button" mat-flat-button (click)="reset()" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon>
+      Reset
+    </button>
+  </div>
+</div>

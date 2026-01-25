@@ -1,13 +1,63 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>TaxoStoreShell</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>TaxoStore Shell</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script src="env.js"></script>
+    <style>
+      .loading-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff;
+        z-index: 9999;
+        font-family: 'Roboto', sans-serif;
+        color: #3f51b5;
+        text-align: center;
+      }
+      .app-loading {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        font-weight: 300;
+      }
+      .spinner {
+        border: 4px solid rgba(63, 81, 181, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #3f51b5;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body class="mat-typography">
+    <app-root>
+      <div class="loading-wrapper">
+        <div class="app-loading">Loading TaxoStore Shell...</div>
+        <div class="spinner"></div>
+      </div>
+    </app-root>
+  </body>
 </html>

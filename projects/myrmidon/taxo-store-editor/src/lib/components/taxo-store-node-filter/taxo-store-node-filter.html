@@ -1,0 +1,20 @@
+<form [formGroup]="form" [class.wrapped]="wrapped" (submit)="apply()">
+  <div class="form-row">
+    <mat-form-field>
+      <input matInput [formControl]="label" placeholder="label" />
+    </mat-form-field>
+
+    <mat-form-field class="flags-field">
+      <input matInput [formControl]="flags" placeholder="flags" />
+    </mat-form-field>
+  </div>
+
+  <div class="form-row actions">
+    <button type="button" mat-icon-button matTooltip="Reset filter" (click)="reset()">
+      <mat-icon class="mat-warn">clear</mat-icon>
+    </button>
+    <button type="submit" mat-icon-button matTooltip="Apply filter" [disabled]="form.invalid">
+      <mat-icon class="mat-primary">check_circle</mat-icon>
+    </button>
+  </div>
+</form>

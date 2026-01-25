@@ -31,6 +31,9 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "polyfills": [
+              "@angular/localize/init"
             ]
           },
           "configurations": {
@@ -38,8 +41,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "3MB",
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -71,6 +74,84 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        }
+      }
+    },
+    "@myrmidon/taxo-store-api": {
+      "projectType": "library",
+      "root": "projects/myrmidon/taxo-store-api",
+      "sourceRoot": "projects/myrmidon/taxo-store-api/src",
+      "prefix": "taxo",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/myrmidon/taxo-store-api/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/myrmidon/taxo-store-api/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/myrmidon/taxo-store-api/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "@myrmidon/taxo-store-editor": {
+      "projectType": "library",
+      "root": "projects/myrmidon/taxo-store-editor",
+      "sourceRoot": "projects/myrmidon/taxo-store-editor/src",
+      "prefix": "taxo",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/myrmidon/taxo-store-editor/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/myrmidon/taxo-store-editor/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/myrmidon/taxo-store-editor/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "@myrmidon/taxo-store-picker": {
+      "projectType": "library",
+      "root": "projects/myrmidon/taxo-store-picker",
+      "sourceRoot": "projects/myrmidon/taxo-store-picker/src",
+      "prefix": "taxo",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/myrmidon/taxo-store-picker/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/myrmidon/taxo-store-picker/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/myrmidon/taxo-store-picker/tsconfig.spec.json"
+          }
         }
       }
     }

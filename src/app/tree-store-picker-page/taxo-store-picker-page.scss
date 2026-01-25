@@ -1,0 +1,55 @@
+.tree-selector {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  mat-form-field {
+    min-width: 300px;
+  }
+}
+
+.picker-container {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  padding: 16px;
+  min-height: 200px;
+}
+
+.picked-node {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 16px;
+    margin: 0;
+
+    div {
+      display: contents;
+    }
+
+    dt {
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+}
+
+.hint {
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+}

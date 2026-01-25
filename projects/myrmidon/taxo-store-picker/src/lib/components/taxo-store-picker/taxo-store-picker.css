@@ -1,0 +1,37 @@
+.tree-store-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.form-row > * {
+  flex: 0 0 auto;
+}
+
+.lookup {
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
+.top-node-select {
+  min-width: 150px;
+}
+
+.flag-mode-select {
+  min-width: 100px;
+}
+
+.flags-select {
+  min-width: 120px;
+}
+
+mat-expansion-panel {
+  margin-top: 8px;
+}

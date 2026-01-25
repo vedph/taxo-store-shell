@@ -3,6 +3,17 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      "@myrmidon/taxo-store-api": [
+        "./dist/myrmidon/taxo-store-api"
+      ],
+      "@myrmidon/taxo-store-editor": [
+        "./dist/myrmidon/taxo-store-editor"
+      ],
+      "@myrmidon/taxo-store-picker": [
+        "./dist/myrmidon/taxo-store-picker"
+      ]
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -28,6 +39,24 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-api/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-api/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-editor/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-editor/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-picker/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/myrmidon/taxo-store-picker/tsconfig.spec.json"
     }
   ]
 }

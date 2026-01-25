@@ -1,0 +1,25 @@
+{
+  "name": "@myrmidon/taxo-store-api",
+  "version": "0.0.1",
+  "description": "Taxonomy store - API services and models.",
+  "keywords": [
+    "Taxonomy store"
+  ],
+  "homepage": "https://github.com/vedph/taxo-store-shell",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vedph/taxo-store-shell"
+  },
+  "author": {
+    "name": "Daniele Fusi"
+  },
+  "peerDependencies": {
+    "@angular/common": "^21.1.0",
+    "@angular/core": "^21.1.0",
+    "@myrmidon/ngx-tools": "^2.0.2"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}
