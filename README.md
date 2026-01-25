@@ -4,9 +4,7 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Overview
 
-This workspace contains frontend components to consume a [tree store](https://github.com/vedph/taxo-store) via its API.
-
-The tree store is a simple store for node trees, backed by a RDBMS. It allows you to create, read, update, and delete nodes in a tree structure. The store is then wrapped in an ASP.NET Core Web API for easy access.
+This workspace contains frontend components to consume a [taxonomies tree store](https://github.com/vedph/taxo-store) via its API. This is a simple tree store for node trees, backed by a RDBMS. It allows you to create, read, update, and delete nodes in a tree structure. The store is then wrapped in an ASP.NET Core Web API for easy access.
 
 There are just two basic entities in the store:
 
