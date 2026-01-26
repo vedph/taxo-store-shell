@@ -29,6 +29,11 @@ For instance, imagine a taxonomy like that of [IconClass](https://iconclass.org/
 - `@myrmidon/taxo-store-editor`: tree store editor component.
 - `@myrmidon/taxo-store-picker`: tree store node picker component, combining a lookup with an editor.
 
+🚀 Build and deploy:
+
+1. `pnpm run build-lib`;
+2. `./publish.bat`.
+
 ### TaxoStore API
 
 - 📦 `@myrmidon/taxo-store-api`
