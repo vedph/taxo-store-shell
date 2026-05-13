@@ -47,7 +47,13 @@ export interface TaxoStoreLookupOptions {
   providedIn: 'root',
 })
 export class TaxoStoreLookupService implements RefLookupService {
-  private readonly _treeStoreService = inject(TaxoStoreService);
+  private readonly _taxoStoreService = inject(TaxoStoreService);
+
+  /**
+   * A unique identifier for this lookup service, used to match
+   * against lookupProviderOptions. Examples: 'viaf', 'whg', 'biblissima'.
+   */
+  public readonly id = 'taxostore';
 
   /**
    * Lookup nodes by their filtered label.
@@ -81,7 +87,7 @@ export class TaxoStoreLookupService implements RefLookupService {
       nodeFilter.flags = options.flags;
     }
 
-    return this._treeStoreService.getNodes(nodeFilter).pipe(map((page) => page.items));
+    return this._taxoStoreService.getNodes(nodeFilter).pipe(map((page) => page.items));
   }
 
   /**
@@ -91,5 +97,28 @@ export class TaxoStoreLookupService implements RefLookupService {
    */
   public getName(item: TaxoStoreNode | undefined | null): string {
     return item?.label ?? '';
+  }
+
+  /**
+   * Get a single item by its native ID.
+   * @param id The item's numeric ID (as string) or string key in the format "treeId.key".
+   * @returns Observable of the item, or undefined if not found.
+   * The returned item must have the same shape as items from lookup().
+   */
+  public getById(id: string): Observable<any | undefined> {
+    // if id is number, use getNode; otherwise, assume it's a key and use getNodeFromKey
+    if (/^\d+$/.test(id)) {
+      const nodeId = parseInt(id, 10);
+      return this._taxoStoreService.getNode(nodeId).pipe(map((node) => node ?? undefined));
+    }
+
+    // the string ID is expected to be in the format "treeId.key"
+    const [treeId, key] = id.split('.', 2);
+    if (!treeId || !key) {
+      return of(undefined);
+    }
+    return this._taxoStoreService
+      .getNodeFromKey(treeId, key)
+      .pipe(map((node) => node ?? undefined));
   }
 }
