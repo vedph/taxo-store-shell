@@ -1,0 +1,25 @@
+.small-icon {
+  font-size: 85% !important;
+  margin-left: 8px;
+}
+
+.tb-fill-remaining-space {
+  flex: 1 1 auto;
+}
+
+footer {
+  color: #808080;
+  padding: 4px;
+  text-align: center;
+}
+
+#logo {
+  flex: 0 0 60px;
+}
+
+mat-toolbar {
+  background-color: #D8C9AA;
+}
+mat-toolbar mat-icon {
+  color: white;
+}

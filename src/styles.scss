@@ -1,37 +1,164 @@
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
-html {
-  height: 100%;
-  @include mat.theme((
+// A theme object is still needed for mat.typography-hierarchy(), which
+// requires the internal structure produced by mat.define-theme().
+$_theme: mat.define-theme(
+  (
     color: (
       primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
+      tertiary: mat.$orange-palette,
+      // color-scheme = use CSS light-dark() so one call covers both modes
+      theme-type: color-scheme,
     ),
-    typography: Roboto,
-    density: 0,
-  ));
-}
+    typography: (
+      brand-family: 'Roboto',
+      plain-family: 'Roboto',
+    ),
+    density: (
+      scale: 0,
+    ),
+  )
+);
 
-body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
+html {
+  // Single mat.theme() call using theme-type: color-scheme.
+  // All --mat-sys-* tokens are emitted as light-dark(lightValue, darkValue).
+  // Light/dark mode is therefore driven entirely by the CSS color-scheme
+  // property below — no second mat.theme() call needed.
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$orange-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        brand-family: 'Roboto',
+        plain-family: 'Roboto',
+      ),
+      density: 0,
+    )
+  );
+
+  // Light by default; toggled to dark by ThemeService via .dark-mode class.
   color-scheme: light;
-
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
 
-  // Reset the user agent margin.
-  margin: 0;
+  &.dark-mode {
+    color-scheme: dark;
+    // No second mat.theme() needed — light-dark() resolves automatically.
+  }
+}
+
+// Apply Material typography scale to .mat-typography (on <body>) and to
+// native h1–h6 elements contained within it.
+@include mat.typography-hierarchy($_theme);
+
+html,
+body {
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+body {
+  margin: 0;
+}
+
+// ── Semantic color utility classes ───────────────────────────────────────────
+// These override the CSS custom properties that Angular Material components
+// read, so they work correctly in both light and dark mode.
+
+// mat-flat-button (M3 "filled" button)
+// Note: in M3 the default filled button already uses the primary color.
+// The .mat-primary override here is a no-op in practice but kept for
+// explicit symmetry with the other classes.
+[mat-flat-button].mat-primary {
+  --mat-button-filled-container-color: var(--mat-sys-primary);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-primary);
+}
+[mat-flat-button].mat-error,
+[mat-flat-button].mat-warn {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+}
+[mat-flat-button].mat-accent {
+  --mat-button-filled-container-color: var(--mat-sys-tertiary);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-tertiary);
+}
+
+// mat-icon-button — class on the <button> element
+[mat-icon-button].mat-primary {
+  --mat-icon-button-icon-color: var(--mat-sys-primary);
+}
+[mat-icon-button].mat-error,
+[mat-icon-button].mat-warn {
+  --mat-icon-button-icon-color: var(--mat-sys-error);
+}
+[mat-icon-button].mat-accent {
+  --mat-icon-button-icon-color: var(--mat-sys-tertiary);
+}
+
+// mat-icon — class on the <mat-icon> element
+// The component reads --mat-icon-color; its own compiled rule
+// "mat-icon.mat-primary { color: var(--mat-icon-color, inherit) }" picks up the value.
+mat-icon.mat-primary {
+  --mat-icon-color: var(--mat-sys-primary);
+}
+mat-icon.mat-error,
+mat-icon.mat-warn {
+  --mat-icon-color: var(--mat-sys-error);
+}
+mat-icon.mat-accent {
+  --mat-icon-color: var(--mat-sys-tertiary);
+}
+
+// ── Background + foreground helpers ──────────────────────────────────────────
+// .bg-mat-primary is used on mat-toolbar and any element that should have a
+// primary-colored background. Beyond the background itself, we must also
+// override the component-level tokens that child mat-button and mat-icon-button
+// use for their own text/icon colors — otherwise text buttons inside a primary
+// toolbar show blue-on-blue (their default --mat-sys-primary label color).
+.bg-mat-primary {
+  background-color: var(--mat-sys-primary) !important;
+  color: var(--mat-sys-on-primary) !important;
+
+  // Toolbar's own text token (used for non-button content such as the title)
+  --mat-toolbar-container-text-color: var(--mat-sys-on-primary);
+
+  // Text buttons inside the toolbar
+  --mat-button-text-label-text-color: var(--mat-sys-on-primary);
+  --mat-button-text-state-layer-color: var(--mat-sys-on-primary);
+
+  // Icon buttons inside the toolbar (unless a more-specific override like
+  // .mat-error is also present on the button — that still takes precedence)
+  --mat-icon-button-icon-color: var(--mat-sys-on-primary);
+  --mat-icon-button-state-layer-color: var(--mat-sys-on-primary);
+
+  // Standalone mat-icon elements inside the element
+  --mat-icon-color: var(--mat-sys-on-primary);
+}
+
+// Generic text-color helpers for non-Material HTML elements
+.mat-primary {
+  color: var(--mat-sys-primary);
+}
+.mat-error,
+.mat-warn {
+  color: var(--mat-sys-error);
+}
+.mat-accent {
+  color: var(--mat-sys-tertiary);
+}
+
+.env-branded-toolbar {
+  // Use a variable that we will set via [style.--app-env-color]
+  background-color: var(--app-env-color, var(--mat-sys-primary)) !important;
+
+  // Ensure the text color contrasts correctly.
+  // If the background is a 'sys' color, the 'on-sys' color is its natural pair.
+  color: var(--app-env-on-color, var(--mat-sys-on-primary)) !important;
+
+  // Apply the same logic to internal component tokens (as you did in your original code)
+  --mat-toolbar-container-text-color: var(--app-env-on-color, var(--mat-sys-on-primary));
+  --mat-icon-button-icon-color: var(--app-env-on-color, var(--mat-sys-on-primary));
+  --mat-button-text-label-text-color: var(--app-env-on-color, var(--mat-sys-on-primary));
+}
