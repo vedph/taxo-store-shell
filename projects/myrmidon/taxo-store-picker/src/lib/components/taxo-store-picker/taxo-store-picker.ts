@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { EditorSettingsService } from '@myrmidon/cadmus-api';
 import { RefLookupComponent } from '@myrmidon/cadmus-refs-lookup';
 import {
   TaxoStoreNode,
@@ -76,7 +77,7 @@ export interface FlagOption {
 })
 export class TaxoStorePicker {
   private readonly _treeStoreService = inject(TaxoStoreService);
-  public readonly lookupService = inject(TaxoStoreLookupService);
+  private readonly _settingService = inject(EditorSettingsService);
 
   /**
    * The ID of the tree to pick nodes from.

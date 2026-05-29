@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build-lib": "ng build @myrmidon/taxo-store-api && ng build @myrmidon/taxo-store-editor && ng build @myrmidon/taxo-store-picker"
+    "build-lib": "ng build @myrmidon/taxo-store-api && ng build @myrmidon/taxo-store-editor && ng build @myrmidon/taxo-store-picker && ng build @myrmidon/cadmus-part-taxo-store-nodes"
   },
   "prettier": {
     "printWidth": 100,
@@ -34,7 +34,11 @@
     "@angular/router": "^21.2.15",
     "@myrmidon/auth-jwt-admin": "^8.0.4",
     "@myrmidon/auth-jwt-login": "^8.0.6",
+    "@myrmidon/cadmus-api": "^14.0.8",
+    "@myrmidon/cadmus-core": "^12.0.4",
     "@myrmidon/cadmus-refs-lookup": "^10.0.9",
+    "@myrmidon/cadmus-ui": "^16.1.1",
+    "@myrmidon/ngx-mat-tools": "^1.0.2",
     "@myrmidon/ngx-tools": "^2.0.3",
     "@myrmidon/paged-data-browsers": "^5.2.3",
     "rxjs": "~7.8.0",

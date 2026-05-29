@@ -1,9 +1,10 @@
 {
-  "name": "@myrmidon/taxo-store-api",
-  "version": "0.0.4",
-  "description": "Taxonomy store - API services and models.",
+  "name": "@myrmidon/cadmus-part-taxo-store-nodes",
+  "version": "0.0.1",
+  "description": "Cadmus - Taxonomy store nodes part.",
   "keywords": [
-    "Taxonomy store"
+    "Cadmus",
+    "Taxonomy"
   ],
   "homepage": "https://github.com/vedph/taxo-store-shell",
   "repository": {
@@ -16,7 +17,10 @@
   "peerDependencies": {
     "@angular/common": "^21.2.15",
     "@angular/core": "^21.2.15",
-    "@myrmidon/ngx-tools": "^2.0.3"
+    "@myrmidon/cadmus-core": "^12.0.4",
+    "@myrmidon/taxo-store-api": "^0.0.4",
+    "@myrmidon/taxo-store-editor": "^0.0.4",
+    "@myrmidon/taxo-store-picker": "^0.0.4"
   },
   "dependencies": {
     "tslib": "^2.3.0"

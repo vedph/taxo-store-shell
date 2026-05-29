@@ -4,6 +4,9 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
+      "@myrmidon/cadmus-part-taxo-store-nodes": [
+        "./dist/myrmidon/cadmus-part-taxo-store-nodes"
+      ],
       "@myrmidon/taxo-store-api": [
         "./dist/myrmidon/taxo-store-api"
       ],
@@ -57,6 +60,12 @@
     },
     {
       "path": "./projects/myrmidon/taxo-store-picker/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.spec.json"
     }
   ]
 }

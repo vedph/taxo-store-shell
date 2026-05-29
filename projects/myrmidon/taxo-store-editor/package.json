@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-editor",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Taxonomy store - tree editor component.",
   "keywords": [
     "Taxonomy store"

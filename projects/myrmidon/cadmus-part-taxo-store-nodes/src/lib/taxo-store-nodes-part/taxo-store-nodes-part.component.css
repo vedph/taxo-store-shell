@@ -1,0 +1,12 @@
+fieldset {
+  border: 1px solid var(--mat-sys-on-surface-variant);
+  border-radius: 6px;
+  padding: 6px;
+}
+legend {
+  color: var(--mat-sys-on-surface-variant);
+}
+div#picker {
+  width: 100%;
+  margin-bottom: 12px;
+}

@@ -1,0 +1,77 @@
+<form [formGroup]="form" (submit)="save()">
+  <mat-card>
+    <mat-card-header>
+      <div mat-card-avatar>
+        <mat-icon>picture_in_picture</mat-icon>
+      </div>
+      <mat-card-title>
+        {{ (modelName() | titlecase) || 'Taxo Store Nodes Part' }}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div id="picker">
+        <fieldset>
+          <legend>picker</legend>
+          <ts-taxo-store-picker [treeId]="treeId()" (nodePick)="addNodeId($event)" />
+        </fieldset>
+      </div>
+      @if (nodeIds.value.length) {
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>value</th>
+              <th>key</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (
+              entry of nodeIds.value;
+              track entry;
+              let i = $index;
+              let first = $first;
+              let last = $last
+            ) {
+              <tr>
+                <td class="fit-width">
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Move this node up"
+                    [disabled]="first"
+                    (click)="moveNodeIdUp(i)"
+                  >
+                    <mat-icon>arrow_upward</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    matTooltip="Move this node down"
+                    [disabled]="last"
+                    (click)="moveNodeIdDown(i)"
+                  >
+                    <mat-icon>arrow_downward</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    color="warn"
+                    matTooltip="Delete this node"
+                    (click)="deleteNodeId(i)"
+                  >
+                    <mat-icon class="mat-warn">remove_circle</mat-icon>
+                  </button>
+                </td>
+                <td>{{ entry.value }}</td>
+                <td>{{ entry.name }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </mat-card-content>
+    <mat-card-actions>
+      <cadmus-close-save-buttons [form]="form" [noSave]="userLevel < 2" (closeRequest)="close()" />
+    </mat-card-actions>
+  </mat-card>
+</form>

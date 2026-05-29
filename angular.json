@@ -154,6 +154,32 @@
           }
         }
       }
+    },
+    "@myrmidon/cadmus-part-taxo-store-nodes": {
+      "projectType": "library",
+      "root": "projects/myrmidon/cadmus-part-taxo-store-nodes",
+      "sourceRoot": "projects/myrmidon/cadmus-part-taxo-store-nodes/src",
+      "prefix": "cadmus",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.spec.json"
+          }
+        }
+      }
     }
   }
 }

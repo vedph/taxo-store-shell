@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-picker",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Tree store - node picker component.",
   "keywords": [
     "Tree store"
