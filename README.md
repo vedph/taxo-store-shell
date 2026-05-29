@@ -83,7 +83,7 @@ editor dialog opens, and on save the same update and refresh actions occur.
   - `availableFlags`: the available flags to filter by. For each flag, an object with `id` and `name` is expected. This is used only if `hasFlagsFilter` is true.
   - `canEdit`: whether users can edit nodes. Default is true.
   - `canAdd`: whether users can add nodes. Default is true.
-  - `canDelete`: whether users can delete nodes. DEfault is true.
+  - `canDelete`: whether users can delete nodes. Default is true.
   - `hideLoc`: whether to hide the location (x,y) from node display. Default is false.
   - `hideFilter`: whether to hide the per-node filter button. Default is false.
   - `label`: the label for the lookup component.
