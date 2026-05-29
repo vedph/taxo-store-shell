@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-picker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Tree store - node picker component.",
   "keywords": [
     "Tree store"
@@ -14,8 +14,8 @@
     "name": "Daniele Fusi"
   },
   "peerDependencies": {
-    "@angular/common": "^21.2.12",
-    "@angular/core": "^21.2.12",
+    "@angular/common": "^21.2.15",
+    "@angular/core": "^21.2.15",
     "@myrmidon/cadmus-refs-lookup": "^10.0.9",
     "@myrmidon/ngx-tools": "^2.0.3",
     "@myrmidon/taxo-store-api": "^0.0.2",

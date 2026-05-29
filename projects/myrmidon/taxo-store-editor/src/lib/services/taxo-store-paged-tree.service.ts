@@ -136,8 +136,35 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
       });
     }
 
-    // If parentId is undefined, we need to fetch root nodes
+    // If parentId is undefined, fetch root nodes.
+    // When a label filter is active, use getNodes with isRoot+matchDescendants so
+    // only roots that have at least one matching descendant are returned.
+    // Without a label filter, use getRootNodes (simpler, no CTE overhead).
     if (filter.parentId === undefined) {
+      if (filter.label) {
+        const rootFilter: TaxoStoreNodeFilter = {
+          pageNumber,
+          pageSize,
+          treeId: this._treeId,
+          isRoot: true,
+          filteredLabel: filter.label,
+          matchDescendants: true,
+          flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+          includePosition: true,
+        };
+        if (filter.flags) {
+          rootFilter.flags = filter.flags;
+        }
+        return this._treeStoreService.getNodes(rootFilter).pipe(
+          map((page) => ({
+            pageNumber: page.pageNumber,
+            pageSize: page.pageSize,
+            pageCount: page.pageCount,
+            total: page.total,
+            items: page.items.map((node) => this.mapNode(node)),
+          })),
+        );
+      }
       return this._treeStoreService.getRootNodes(this._treeId, { pageNumber, pageSize }, true).pipe(
         map((page) => ({
           pageNumber: page.pageNumber,
@@ -149,7 +176,9 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
       );
     }
 
-    // For child nodes, use getNodes with parentId filter
+    // For child nodes, use getNodes with parentId filter.
+    // When a label filter is active, matchDescendants ensures a child node is
+    // included even if only a deeper descendant matches.
     const apiFilter: TaxoStoreNodeFilter = {
       pageNumber,
       pageSize,
@@ -161,6 +190,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
 
     if (filter.label) {
       apiFilter.filteredLabel = filter.label;
+      apiFilter.matchDescendants = true;
     }
 
     if (filter.flags) {

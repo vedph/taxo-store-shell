@@ -45,6 +45,16 @@ export interface TaxoStoreNodeFilter {
    * Default is false for better performance on bulk queries.
    */
   includePosition?: boolean;
+  /**
+   * When true, restricts results to root nodes (parent_id IS NULL).
+   */
+  isRoot?: boolean;
+  /**
+   * When true and filteredLabel is set, a node is included if it directly
+   * matches the label OR if any of its descendants match. Uses a
+   * reverse-recursive SQL CTE on the server side.
+   */
+  matchDescendants?: boolean;
 }
 
 /**
@@ -191,6 +201,12 @@ export class TaxoStoreService {
     }
     if (filter.includePosition) {
       params.includePosition = 'true';
+    }
+    if (filter.isRoot) {
+      params.isRoot = 'true';
+    }
+    if (filter.matchDescendants) {
+      params.matchDescendants = 'true';
     }
 
     return this._http
