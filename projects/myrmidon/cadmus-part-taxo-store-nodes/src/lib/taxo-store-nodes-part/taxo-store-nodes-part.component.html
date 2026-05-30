@@ -12,7 +12,18 @@
       <div id="picker">
         <fieldset>
           <legend>picker</legend>
-          <ts-taxo-store-picker [treeId]="treeId()" (nodePick)="addNodeId($event)" />
+          <ts-taxo-store-picker
+            [treeId]="treeId()"
+            [hasTopNodeFilter]="settings().hasTopNodeFilter || false"
+            [hasFlagsFilter]="settings().hasFlagsFilter || false"
+            [canEdit]="settings().canEdit || false"
+            [canAdd]="settings().canAdd || false"
+            [canDelete]="settings().canDelete || false"
+            [hideLoc]="settings().hideLoc || false"
+            [hideFilter]="settings().hideFilter || false"
+            [label]="settings().label || 'node'"
+            (nodePick)="addNodeId($event)"
+          />
         </fieldset>
       </div>
       @if (nodeIds.value.length) {

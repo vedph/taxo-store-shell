@@ -77,7 +77,7 @@ export interface FlagOption {
 })
 export class TaxoStorePicker {
   private readonly _treeStoreService = inject(TaxoStoreService);
-  private readonly _settingService = inject(EditorSettingsService);
+  public readonly lookupService = inject(TaxoStoreLookupService);
 
   /**
    * The ID of the tree to pick nodes from.

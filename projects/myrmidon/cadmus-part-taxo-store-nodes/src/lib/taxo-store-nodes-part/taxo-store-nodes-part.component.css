@@ -10,3 +10,23 @@ div#picker {
   width: 100%;
   margin-bottom: 12px;
 }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--mat-sys-on-surface-variant);
+}
+tbody tr:nth-child(odd) {
+  background-color: var(--mat-sys-surface-container);
+}
+th {
+  text-align: left;
+  font-weight: normal;
+  color: var(--mat-sys-on-surface-variant);
+}
+tbody tr:hover {
+  background-color: var(--mat-sys-surface-container-high);
+}
+td.fit-width {
+  width: 1px;
+  white-space: nowrap;
+}

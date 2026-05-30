@@ -1,0 +1,8 @@
+<cadmus-current-item-bar />
+<cadmus-taxo-store-nodes-part
+  [identity]="identity()"
+  [data]="$any(data())"
+  (dataChange)="save($event!.value!)"
+  (editorClose)="close()"
+  (dirtyChange)="onDirtyChange($event)"
+/>

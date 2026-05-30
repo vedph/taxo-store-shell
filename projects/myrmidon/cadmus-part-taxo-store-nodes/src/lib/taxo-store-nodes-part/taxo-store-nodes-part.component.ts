@@ -27,13 +27,25 @@ import { EditedObject } from '@myrmidon/cadmus-core';
 import { CloseSaveButtonsComponent, ModelEditorComponentBase } from '@myrmidon/cadmus-ui';
 
 import { TaxoStoreNode } from '@myrmidon/taxo-store-api';
-import { TaxoStorePicker } from '@myrmidon/taxo-store-picker';
+import { FlagOption, TaxoStorePicker } from '@myrmidon/taxo-store-picker';
 
 import {
   StringPair,
   TAXO_STORE_NODES_PART_TYPEID,
   TaxoStoreNodesPart,
 } from '../taxo-store-nodes-part';
+
+interface TaxoStoreNodesPartSettings {
+  hasTopNodeFilter?: boolean;
+  hasFlagsFilter?: boolean;
+  availableFlags?: FlagOption[];
+  canEdit?: boolean;
+  canAdd?: boolean;
+  canDelete?: boolean;
+  hideLoc?: boolean;
+  hideFilter?: boolean;
+  label?: string;
+}
 
 /**
  * TaxoStoreNodesPart editor component.
@@ -47,7 +59,6 @@ import {
   imports: [
     ReactiveFormsModule,
     MatIcon,
-    MatButton,
     MatCard,
     MatCardActions,
     MatCardTitle,
@@ -68,6 +79,13 @@ export class TaxoStoreNodesPartComponent
 {
   public readonly treeId = signal<string>('');
   public nodeIds: FormControl<StringPair[]>;
+  public readonly settings = signal<TaxoStoreNodesPartSettings>({
+    hasTopNodeFilter: true,
+    hasFlagsFilter: true,
+    canEdit: true,
+    canAdd: true,
+    canDelete: true,
+  });
 
   constructor(
     authService: AuthJwtService,
@@ -80,6 +98,13 @@ export class TaxoStoreNodesPartComponent
       // at least 1 entry
       validators: NgxToolsValidators.strictMinLengthValidator(1),
       nonNullable: true,
+    });
+
+    // load settings and apply them when they get available
+    this.initSettings<TaxoStoreNodesPartSettings>(TAXO_STORE_NODES_PART_TYPEID, (settings) => {
+      if (settings) {
+        this.settings.set(settings);
+      }
     });
   }
 
