@@ -8,7 +8,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 
-import { MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import {
   MatCard,
   MatCardActions,
@@ -35,6 +35,12 @@ import {
   TaxoStoreNodesPart,
 } from '../taxo-store-nodes-part';
 
+/**
+ * Settings for the TaxoStoreNodesPart editor.
+ * These are loaded from the part's settings at design time, when the part is created.
+ * The settings are stored in backend. They are not expected to change after
+ * the editor is initialized.
+ */
 interface TaxoStoreNodesPartSettings {
   hasTopNodeFilter?: boolean;
   hasFlagsFilter?: boolean;
@@ -59,6 +65,7 @@ interface TaxoStoreNodesPartSettings {
   imports: [
     ReactiveFormsModule,
     MatIcon,
+    MatIconButton,
     MatCard,
     MatCardActions,
     MatCardTitle,
@@ -149,8 +156,8 @@ export class TaxoStoreNodesPartComponent
       value: node?.key || '',
     };
 
-    // do not add if null or already present with same name
-    if (!nodePair.value || this.nodeIds.value.some((e) => e.name === nodePair.name)) {
+    // do not add if null or already present with same key
+    if (!nodePair.value || this.nodeIds.value.some((e) => e.value === nodePair.value)) {
       return;
     }
 

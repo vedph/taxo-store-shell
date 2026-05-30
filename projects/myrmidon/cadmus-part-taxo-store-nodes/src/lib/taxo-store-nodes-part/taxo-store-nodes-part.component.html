@@ -16,6 +16,7 @@
             [treeId]="treeId()"
             [hasTopNodeFilter]="settings().hasTopNodeFilter || false"
             [hasFlagsFilter]="settings().hasFlagsFilter || false"
+            [availableFlags]="settings().availableFlags || []"
             [canEdit]="settings().canEdit || false"
             [canAdd]="settings().canAdd || false"
             [canDelete]="settings().canDelete || false"
@@ -31,7 +32,7 @@
           <thead>
             <tr>
               <th></th>
-              <th>value</th>
+              <th>label</th>
               <th>key</th>
             </tr>
           </thead>
@@ -73,8 +74,8 @@
                     <mat-icon class="mat-warn">remove_circle</mat-icon>
                   </button>
                 </td>
-                <td>{{ entry.value }}</td>
                 <td>{{ entry.name }}</td>
+                <td>{{ entry.value }}</td>
               </tr>
             }
           </tbody>

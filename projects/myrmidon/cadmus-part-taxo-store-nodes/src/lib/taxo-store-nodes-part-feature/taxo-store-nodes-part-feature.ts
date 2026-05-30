@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 
@@ -13,6 +13,7 @@ import { TaxoStoreNodesPartComponent } from '../taxo-store-nodes-part/taxo-store
   imports: [CurrentItemBarComponent, TaxoStoreNodesPartComponent],
   templateUrl: './taxo-store-nodes-part-feature.html',
   styleUrl: './taxo-store-nodes-part-feature.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaxoStoreNodesPartFeature extends EditPartFeatureBase implements OnInit {
   constructor(
