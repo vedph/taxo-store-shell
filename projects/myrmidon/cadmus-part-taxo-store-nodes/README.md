@@ -13,11 +13,11 @@ Usage:
 ```ts
 // this constant refers to the project-dependent portion of the route path
 // (items/:iid/taxo) in routes definitions
-const TAXOSTORE = 'taxo';
+const TAXO = 'taxo';
 
 // itinera parts example
 [TAXO_STORE_NODES_PART_TYPEID]: {
-  part: TAXOSTORE
+  part: TAXO
 }
 ```
 
