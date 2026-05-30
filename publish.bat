@@ -19,3 +19,8 @@ cd .\dist\myrmidon\taxo-store-picker
 call npm publish --access=public
 cd ..\..\..
 pause
+
+cd .\dist\myrmidon\taxo-store-nodes
+call npm publish --access=public
+cd ..\..\..
+pause
