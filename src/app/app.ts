@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, Inject, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -26,6 +26,7 @@ import { AuthJwtService, GravatarPipe, User } from '@myrmidon/auth-jwt-login';
     GravatarPipe,
   ],
   templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./app.scss'],
 })
 export class App implements OnDestroy {

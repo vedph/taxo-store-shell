@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { AuthJwtService } from '@myrmidon/auth-jwt-login';
@@ -7,6 +7,7 @@ import { AuthJwtService } from '@myrmidon/auth-jwt-login';
   selector: 'cadmus-home',
   imports: [RouterModule],
   templateUrl: './home.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent {

@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-api",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "description": "Taxonomy store - API services and models.",
   "keywords": [
     "Taxonomy store"
@@ -14,9 +14,9 @@
     "name": "Daniele Fusi"
   },
   "peerDependencies": {
-    "@angular/common": "^21.2.15",
-    "@angular/core": "^21.2.15",
-    "@myrmidon/ngx-tools": "^2.0.3"
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@myrmidon/ngx-tools": "^3.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

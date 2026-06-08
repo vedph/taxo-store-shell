@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-editor",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "description": "Taxonomy store - tree editor component.",
   "keywords": [
     "Taxonomy store"
@@ -17,10 +17,10 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/common": "^21.2.15",
-    "@angular/core": "^21.2.15",
-    "@myrmidon/ngx-tools": "^2.0.3",
-    "@myrmidon/paged-data-browsers": "^5.2.3",
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@myrmidon/ngx-tools": "^3.0.0",
+    "@myrmidon/paged-data-browsers": "^6.0.0",
     "@myrmidon/taxo-store-api": "^0.0.2"
   },
   "sideEffects": false

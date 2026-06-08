@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/cadmus-part-taxo-store-nodes",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Cadmus - Taxonomy store nodes part.",
   "keywords": [
     "Cadmus",
@@ -15,8 +15,8 @@
     "name": "Daniele Fusi"
   },
   "peerDependencies": {
-    "@angular/common": "^21.2.15",
-    "@angular/core": "^21.2.15",
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
     "@myrmidon/cadmus-core": "^12.0.4",
     "@myrmidon/taxo-store-api": "^0.0.4",
     "@myrmidon/taxo-store-editor": "^0.0.4",

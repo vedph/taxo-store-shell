@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ReactiveFormsModule } from '@angular/forms';
@@ -18,6 +18,7 @@ import { AuthJwtRegistrationComponent } from '@myrmidon/auth-jwt-admin';
   standalone: true,
   templateUrl: './register-user-page.component.html',
   styleUrls: ['./register-user-page.component.css'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
