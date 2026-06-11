@@ -56,12 +56,11 @@ The service with its models is designed to interact with the [TaxoStore backend 
   - `hideFilter`: whether to hide the per-node filter button. Default is false.
   - `pageSize`: the page size for loading nodes. Default is 20.
 - 🔥 output:
-  - `nodePick` (`TaxoStoreTreeNode`): emitted when a node is picked by the user.
+  - `nodePick` (`TaxoStoreNode`): emitted when a node is picked by the user.
 
 Component for editing a tree store.
 
-This editor uses a tree store view, which displays a readonly tree view and adds to each displayed node a set of buttons for editing it. Whenever a node is added, updated or deleted, the tree view gets refreshed. The purpose of the component is letting users pick one or more nodes, while also adding or editing
-nodes at will.
+This editor uses a tree store view, which displays a readonly tree view and adds to each displayed node a set of buttons for editing it. Whenever a node is added, updated or deleted, the tree view gets refreshed. The purpose of the component is letting users pick one or more nodes, while also adding or editing nodes at will.
 
 Editing is done via a `TaxoStoreService` instance, which sends requests to a backend API and then fetches the updated tree back to refresh the readonly tree view. This view already provides a customizable template for each node it displays. This component customizes it by adding buttons for these commands:
 
@@ -89,4 +88,4 @@ editor dialog opens, and on save the same update and refresh actions occur.
   - `label`: the label for the lookup component.
   - `pageSize`: the page size for loading nodes. Default is 20.
 - 🔥 output:
-  - `nodePick` (`TaxoStoreTreeNode`): emitted when a node is picked by the user.
+  - `nodePick` (`TaxoStoreNode`): emitted when a node is picked by the user.
