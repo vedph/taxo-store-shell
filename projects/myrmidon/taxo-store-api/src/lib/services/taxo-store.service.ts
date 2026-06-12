@@ -83,7 +83,7 @@ export class TaxoStoreService {
   }
 
   private getApiUrl(): string {
-    return `${this._env.get('apiUrl')}${this._urlPrefix || ''}`;
+    return `${this._env.get('taxoUrl')}${this._urlPrefix || ''}`;
   }
 
   /**
