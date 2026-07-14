@@ -22,7 +22,7 @@
     ]
   },
   "private": true,
-  "packageManager": "pnpm@11.5.3",
+  "packageManager": "pnpm@11.12.0",
   "dependencies": {
     "@angular/cdk": "~22.0.1",
     "@angular/common": "^22.0.1",
@@ -32,14 +32,14 @@
     "@angular/material": "~22.0.1",
     "@angular/platform-browser": "^22.0.1",
     "@angular/router": "^22.0.1",
-    "@myrmidon/auth-jwt-admin": "^9.0.0",
-    "@myrmidon/auth-jwt-login": "^9.0.0",
-    "@myrmidon/cadmus-api": "^15.0.0",
+    "@myrmidon/auth-jwt-admin": "^10.0.0",
+    "@myrmidon/auth-jwt-login": "^10.0.0",
+    "@myrmidon/cadmus-api": "^15.0.1",
     "@myrmidon/cadmus-core": "^13.0.0",
-    "@myrmidon/cadmus-item-editor": "^17.0.0",
+    "@myrmidon/cadmus-item-editor": "^17.0.1",
     "@myrmidon/cadmus-refs-lookup": "^11.0.0",
     "@myrmidon/cadmus-state": "^16.0.0",
-    "@myrmidon/cadmus-ui": "^17.0.0",
+    "@myrmidon/cadmus-ui": "^17.0.1",
     "@myrmidon/ngx-mat-tools": "^2.0.0",
     "@myrmidon/ngx-tools": "^3.0.0",
     "@myrmidon/paged-data-browsers": "^6.0.0",
@@ -53,8 +53,8 @@
     "@angular/compiler-cli": "^22.0.1",
     "@angular/localize": "^22.0.1",
     "jsdom": "^29.1.1",
-    "ng-packagr": "^22.0.0",
+    "ng-packagr": "^22.0.1",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.10"
   }
 }
