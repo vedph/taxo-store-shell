@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { retry, catchError } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
+import { retry, catchError, map, switchMap } from 'rxjs/operators';
 
 import { EnvService, ErrorService, DataPage, PagingOptions } from '@myrmidon/ngx-tools';
 
@@ -87,14 +87,42 @@ export class TaxoStoreService {
   }
 
   /**
+   * Get a single resource which might not exist. A 404 response is mapped
+   * to null (without retrying), while other errors are retried and then
+   * handled as usual.
+   * @param url The resource URL.
+   * @returns Observable of the resource or null if not found.
+   */
+  private getOptional<T>(url: string): Observable<T | null> {
+    return this._http.get<T | null>(url).pipe(
+      catchError((error: HttpErrorResponse) =>
+        error.status === 404 ? of(null) : throwError(() => error),
+      ),
+      retry(3),
+      catchError(this._error.handleError),
+    );
+  }
+
+  /**
+   * Extract the ID of a newly created node from the Location header
+   * of a 201 response, e.g. `.../nodes/123`.
+   * @param response The response.
+   * @returns The ID, or null if not available (the header is not exposed
+   * to cross-origin clients unless the server allows it).
+   */
+  private getIdFromLocation(response: HttpResponse<unknown>): number | null {
+    const location = response.headers?.get('Location');
+    const m = location ? /\/(\d+)\/?$/.exec(location) : null;
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  /**
    * Get a single tree by ID.
    * @param id The tree ID.
    * @returns Observable of the tree or null if not found.
    */
   public getTree(id: string): Observable<TaxoStoreTree | null> {
-    return this._http
-      .get<TaxoStoreTree | null>(`${this.getApiUrl()}trees/${id}`)
-      .pipe(retry(3), catchError(this._error.handleError));
+    return this.getOptional<TaxoStoreTree>(`${this.getApiUrl()}trees/${id}`);
   }
 
   // #region Trees
@@ -118,14 +146,16 @@ export class TaxoStoreService {
   }
 
   /**
-   * Add a new tree.
+   * Add or update a tree.
    * @param tree The tree to add.
-   * @returns Observable of the new tree ID.
+   * @returns Observable of the tree ID.
    */
-  public addTree(tree: TaxoStoreTree): Observable<number> {
-    return this._http
-      .post<number>(`${this.getApiUrl()}trees`, tree)
-      .pipe(catchError(this._error.handleError));
+  public addTree(tree: TaxoStoreTree): Observable<string> {
+    // the API returns 201 with an empty body
+    return this._http.post<unknown>(`${this.getApiUrl()}trees`, tree).pipe(
+      map(() => tree.id),
+      catchError(this._error.handleError),
+    );
   }
 
   /**
@@ -148,9 +178,9 @@ export class TaxoStoreService {
    * @returns Observable of the node or null if not found.
    */
   public getNodeFromKey(treeId: string, key: string): Observable<TaxoStoreNode | null> {
-    return this._http
-      .get<TaxoStoreNode | null>(`${this.getApiUrl()}nodes/tree/${treeId}/key/${key}`)
-      .pipe(retry(3), catchError(this._error.handleError));
+    return this.getOptional<TaxoStoreNode>(
+      `${this.getApiUrl()}nodes/tree/${encodeURIComponent(treeId)}/key/${encodeURIComponent(key)}`,
+    );
   }
 
   /**
@@ -159,9 +189,7 @@ export class TaxoStoreService {
    * @returns Observable of the node or null if not found.
    */
   public getNode(id: number): Observable<TaxoStoreNode | null> {
-    return this._http
-      .get<TaxoStoreNode | null>(`${this.getApiUrl()}nodes/${id}`)
-      .pipe(retry(3), catchError(this._error.handleError));
+    return this.getOptional<TaxoStoreNode>(`${this.getApiUrl()}nodes/${id}`);
   }
 
   /**
@@ -241,14 +269,36 @@ export class TaxoStoreService {
   }
 
   /**
-   * Add a new node.
-   * @param node The node to add.
-   * @returns Observable of the new node ID.
+   * Add a new node (when its ID is 0) or update an existing one.
+   * @param node The node to add or update.
+   * @returns Observable of the node ID (the new one when adding).
    */
   public addNode(node: TaxoStoreNode): Observable<number> {
+    // the API returns 201 with an empty body and the new node's URL
+    // in the Location header, which might not be readable cross-origin;
+    // in this case, the new node is got by its tree and key
     return this._http
-      .post<number>(`${this.getApiUrl()}nodes`, node)
-      .pipe(catchError(this._error.handleError));
+      .post<unknown>(`${this.getApiUrl()}nodes`, node, { observe: 'response' })
+      .pipe(
+        catchError(this._error.handleError),
+        switchMap((response) => {
+          if (node.id > 0) {
+            return of(node.id);
+          }
+          const id = this.getIdFromLocation(response);
+          if (id !== null) {
+            return of(id);
+          }
+          return this.getNodeFromKey(node.treeId, node.key).pipe(
+            map((saved) => {
+              if (!saved) {
+                throw new Error(`Added node not found: ${node.treeId}/${node.key}`);
+              }
+              return saved.id;
+            }),
+          );
+        }),
+      );
   }
 
   /**
