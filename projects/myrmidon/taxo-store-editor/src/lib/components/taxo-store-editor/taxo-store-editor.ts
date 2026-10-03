@@ -1,12 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   inject,
   input,
   OnDestroy,
-  OnInit,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Observable, Subscription, firstValueFrom } from 'rxjs';
@@ -79,7 +80,7 @@ import { PagedTreeNode, TreeNode, TreeNodeFilter } from '@myrmidon/paged-data-br
   templateUrl: './taxo-store-editor.html',
   styleUrls: ['./taxo-store-editor.scss'],
 })
-export class TaxoStoreEditor implements OnInit, OnDestroy {
+export class TaxoStoreEditor implements OnDestroy {
   private readonly _dialog = inject(MatDialog);
   private readonly _treeStoreService = inject(TaxoStoreService);
   private readonly _pagedTreeService = inject(TaxoStorePagedTreeService);
@@ -136,21 +137,26 @@ export class TaxoStoreEditor implements OnInit, OnDestroy {
   public nodes$?: Observable<Readonly<PagedTaxoStoreNode[]>>;
   public filter$?: Observable<Readonly<TaxoStoreNodeTreeFilter>>;
 
-  public ngOnInit(): void {
-    this.initStore();
+  constructor() {
+    // (re)initialize the store whenever the tree ID or page size change
+    effect(() => {
+      const treeId = this.treeId();
+      const pageSize = this.pageSize();
+      untracked(() => this.initStore(treeId, pageSize));
+    });
   }
 
   public ngOnDestroy(): void {
     this._sub?.unsubscribe();
   }
 
-  private initStore(): void {
-    this._pagedTreeService.treeId = this.treeId();
+  private initStore(treeId: string, pageSize: number): void {
+    this._pagedTreeService.treeId = treeId;
 
     this._store = new PagedTreeStore<PagedTaxoStoreNode, TaxoStoreNodeTreeFilter>(
       this._pagedTreeService,
       {
-        pageSize: this.pageSize(),
+        pageSize,
         cacheSize: 100,
         hasMockRoot: false,
       },

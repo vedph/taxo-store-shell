@@ -98,7 +98,14 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/myrmidon/taxo-store-api/tsconfig.spec.json"
+            "tsConfig": "projects/myrmidon/taxo-store-api/tsconfig.spec.json",
+            "coverageInclude": [
+              "projects/myrmidon/taxo-store-api/src/**/*.ts"
+            ],
+            "coverageExclude": [
+              "projects/myrmidon/taxo-store-api/src/**/*.spec.ts",
+              "projects/myrmidon/taxo-store-api/src/public-api.ts"
+            ]
           }
         }
       }
@@ -124,7 +131,14 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/myrmidon/taxo-store-editor/tsconfig.spec.json"
+            "tsConfig": "projects/myrmidon/taxo-store-editor/tsconfig.spec.json",
+            "coverageInclude": [
+              "projects/myrmidon/taxo-store-editor/src/**/*.ts"
+            ],
+            "coverageExclude": [
+              "projects/myrmidon/taxo-store-editor/src/**/*.spec.ts",
+              "projects/myrmidon/taxo-store-editor/src/public-api.ts"
+            ]
           }
         }
       }
@@ -150,7 +164,14 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/myrmidon/taxo-store-picker/tsconfig.spec.json"
+            "tsConfig": "projects/myrmidon/taxo-store-picker/tsconfig.spec.json",
+            "coverageInclude": [
+              "projects/myrmidon/taxo-store-picker/src/**/*.ts"
+            ],
+            "coverageExclude": [
+              "projects/myrmidon/taxo-store-picker/src/**/*.spec.ts",
+              "projects/myrmidon/taxo-store-picker/src/public-api.ts"
+            ]
           }
         }
       }
@@ -176,7 +197,14 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.spec.json"
+            "tsConfig": "projects/myrmidon/cadmus-part-taxo-store-nodes/tsconfig.spec.json",
+            "coverageInclude": [
+              "projects/myrmidon/cadmus-part-taxo-store-nodes/src/**/*.ts"
+            ],
+            "coverageExclude": [
+              "projects/myrmidon/cadmus-part-taxo-store-nodes/src/**/*.spec.ts",
+              "projects/myrmidon/cadmus-part-taxo-store-nodes/src/public-api.ts"
+            ]
           }
         }
       }

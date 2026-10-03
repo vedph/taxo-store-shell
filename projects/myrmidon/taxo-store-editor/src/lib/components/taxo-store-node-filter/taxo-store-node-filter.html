@@ -10,10 +10,22 @@
   </div>
 
   <div class="form-row actions">
-    <button type="button" mat-icon-button matTooltip="Reset filter" (click)="reset()">
+    <button
+      type="button"
+      mat-icon-button
+      matTooltip="Reset filter"
+      aria-label="Reset filter"
+      (click)="reset()"
+    >
       <mat-icon class="mat-warn">clear</mat-icon>
     </button>
-    <button type="submit" mat-icon-button matTooltip="Apply filter" [disabled]="form.invalid">
+    <button
+      type="submit"
+      mat-icon-button
+      matTooltip="Apply filter"
+      aria-label="Apply filter"
+      [disabled]="form.invalid"
+    >
       <mat-icon class="mat-primary">check_circle</mat-icon>
     </button>
   </div>

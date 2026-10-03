@@ -95,7 +95,8 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
   private mapNode(node: TaxoStoreNode): TaxoStoreTreeNode {
     return {
       id: node.id,
-      parentId: node.parentId,
+      // the API returns null for root nodes, while TreeNode expects undefined
+      parentId: node.parentId ?? undefined,
       y: node.y ?? 1,
       x: node.x ?? 1,
       label: node.label,
