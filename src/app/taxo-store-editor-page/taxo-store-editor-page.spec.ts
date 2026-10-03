@@ -1,18 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { TreeStoreEditorPage } from './taxo-store-editor-page';
+import { TaxoStoreEditorPage } from './taxo-store-editor-page';
 
-describe('TreeStoreEditorPage', () => {
-  let component: TreeStoreEditorPage;
-  let fixture: ComponentFixture<TreeStoreEditorPage>;
+describe('TaxoStoreEditorPage', () => {
+  let component: TaxoStoreEditorPage;
+  let fixture: ComponentFixture<TaxoStoreEditorPage>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TreeStoreEditorPage]
-    })
-    .compileComponents();
+      imports: [TaxoStoreEditorPage],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(TreeStoreEditorPage);
+    fixture = TestBed.createComponent(TaxoStoreEditorPage);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

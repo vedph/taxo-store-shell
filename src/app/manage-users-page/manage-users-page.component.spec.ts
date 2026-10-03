@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { ManageUsersPageComponent } from './manage-users-page.component';
 
@@ -8,15 +11,13 @@ describe('ManageUsersPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-    imports: [ManageUsersPageComponent]
-})
-    .compileComponents();
-  });
+      imports: [ManageUsersPageComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(ManageUsersPageComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
   it('should create', () => {
