@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build-lib": "ng build @myrmidon/taxo-store-api && ng build @myrmidon/taxo-store-editor && ng build @myrmidon/taxo-store-picker && ng build @myrmidon/cadmus-part-taxo-store-nodes"
+    "build-lib": "ng build @myrmidon/taxo-store-api && ng build @myrmidon/taxo-store-editor && ng build @myrmidon/taxo-store-picker"
   },
   "prettier": {
     "printWidth": 100,
