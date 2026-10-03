@@ -17,10 +17,10 @@
   "peerDependencies": {
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0",
-    "@myrmidon/cadmus-core": "^12.0.4",
-    "@myrmidon/taxo-store-api": "^0.0.4",
-    "@myrmidon/taxo-store-editor": "^0.0.4",
-    "@myrmidon/taxo-store-picker": "^0.0.4"
+    "@myrmidon/cadmus-core": "^13.0.1",
+    "@myrmidon/taxo-store-api": "^1.0.0",
+    "@myrmidon/taxo-store-editor": "^1.0.0",
+    "@myrmidon/taxo-store-picker": "^1.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
