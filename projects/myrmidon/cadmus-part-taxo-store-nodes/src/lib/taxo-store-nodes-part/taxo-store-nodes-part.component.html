@@ -50,6 +50,7 @@
                     type="button"
                     mat-icon-button
                     matTooltip="Move this node up"
+                    aria-label="Move this node up"
                     [disabled]="first"
                     (click)="moveNodeIdUp(i)"
                   >
@@ -59,6 +60,7 @@
                     type="button"
                     mat-icon-button
                     matTooltip="Move this node down"
+                    aria-label="Move this node down"
                     [disabled]="last"
                     (click)="moveNodeIdDown(i)"
                   >
@@ -69,6 +71,7 @@
                     mat-icon-button
                     color="warn"
                     matTooltip="Delete this node"
+                    aria-label="Delete this node"
                     (click)="deleteNodeId(i)"
                   >
                     <mat-icon class="mat-warn">remove_circle</mat-icon>

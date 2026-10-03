@@ -19,5 +19,9 @@
     - `TaxoStorePicker` now resets the selected top node (category) filter when the tree ID changes, as it belongs to the previous tree, and ignores stale top nodes responses.
     - `TaxoStorePicker`: added accessible names (`aria-label`) to icon buttons, and `aria-expanded` to the tree editor toggle.
     - full unit test coverage.
+  - `@myrmidon/cadmus-part-taxo-store-nodes`:
+    - `TaxoStoreNodesPartComponent`: for a new part, the tree ID is now got from the part's role ID in the editor identity; previously it was empty, so no node could be picked in a new part. The `treeId` property is now a computed signal (part's tree ID, else part's role ID, else identity's role ID).
+    - `TaxoStoreNodesPartComponent`: added accessible names (`aria-label`) to icon buttons.
+    - unit tests for all components. Note: `@myrmidon/cadmus-item-editor` imports packages which are not installed in this workspace (e.g. `@myrmidon/cadmus-ui-flag-set`), so its module is mocked in tests.
 - 2026-09-06: updated packages.
 - 2026-06-11: upgraded to Angular 22.

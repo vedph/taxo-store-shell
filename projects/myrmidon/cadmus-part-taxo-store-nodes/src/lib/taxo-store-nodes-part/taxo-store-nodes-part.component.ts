@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnInit, signal } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import {
   FormControl,
@@ -84,7 +84,15 @@ export class TaxoStoreNodesPartComponent
   extends ModelEditorComponentBase<TaxoStoreNodesPart>
   implements OnInit
 {
-  public readonly treeId = signal<string>('');
+  // the tree ID got from the edited part, if any
+  private readonly _partTreeId = signal<string>('');
+  /**
+   * The tree ID: this is the part's tree ID, or its role ID; for a new part,
+   * it is the role ID from the part's identity.
+   */
+  public readonly treeId = computed<string>(
+    () => this._partTreeId() || this.identity()?.roleId || '',
+  );
   public nodeIds: FormControl<StringPair[]>;
   public readonly settings = signal<TaxoStoreNodesPartSettings>({
     hasTopNodeFilter: true,
@@ -127,11 +135,12 @@ export class TaxoStoreNodesPartComponent
 
   private updateForm(part?: TaxoStoreNodesPart | null): void {
     if (!part) {
+      this._partTreeId.set('');
       this.form.reset();
       return;
     }
     // the treeId is either the treeId or the roleId, if the former is not set
-    this.treeId.set(part.treeId || part.roleId || '');
+    this._partTreeId.set(part.treeId || part.roleId || '');
     this.nodeIds.setValue(part.nodeIds || []);
     this.form.markAsPristine();
   }
