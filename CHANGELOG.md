@@ -14,5 +14,10 @@
     - `TaxoStorePagedTreeService` normalizes the `null` parent ID returned by the API for root nodes to `undefined`, as expected by `TreeNode`.
     - `TaxoStoreNodeFilter`: added accessible names (`aria-label`) to icon buttons.
     - unit tests for all components and services.
+  - `@myrmidon/taxo-store-picker`:
+    - `TaxoStoreLookupService.getById` now correctly handles keys containing dots (e.g. `animals.animal.bird` is tree `animals`, key `animal.bird`); previously the key was truncated at its first dot.
+    - `TaxoStorePicker` now resets the selected top node (category) filter when the tree ID changes, as it belongs to the previous tree, and ignores stale top nodes responses.
+    - `TaxoStorePicker`: added accessible names (`aria-label`) to icon buttons, and `aria-expanded` to the tree editor toggle.
+    - full unit test coverage.
 - 2026-09-06: updated packages.
 - 2026-06-11: upgraded to Angular 22.

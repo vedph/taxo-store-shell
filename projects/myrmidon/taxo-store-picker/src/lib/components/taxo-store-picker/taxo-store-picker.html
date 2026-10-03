@@ -58,7 +58,13 @@
 
       <!-- Clear flags button -->
       @if (selectedFlags().length > 0) {
-        <button type="button" mat-icon-button matTooltip="Clear flags" (click)="clearFlags()">
+        <button
+          type="button"
+          mat-icon-button
+          matTooltip="Clear flags"
+          aria-label="Clear flags"
+          (click)="clearFlags()"
+        >
           <mat-icon>clear</mat-icon>
         </button>
       }
@@ -69,6 +75,8 @@
       type="button"
       mat-icon-button
       matTooltip="Toggle tree editor"
+      aria-label="Toggle tree editor"
+      [attr.aria-expanded]="expanded()"
       (click)="expanded.set(!expanded())"
     >
       @if (expanded()) {

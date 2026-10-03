@@ -208,11 +208,12 @@ export class TaxoStorePicker {
     // Load top nodes when tree ID changes
     effect(() => {
       const treeId = this.treeId();
+      // any selected top node belongs to the previous tree
+      this.selectedTopNodeKey.set(null);
       if (treeId && this.hasTopNodeFilter()) {
         this.loadTopNodes(treeId);
       } else {
         this.topNodes.set([]);
-        this.selectedTopNodeKey.set(null);
       }
     });
   }
@@ -223,9 +224,14 @@ export class TaxoStorePicker {
   private async loadTopNodes(treeId: string): Promise<void> {
     this.loading.set(true);
     try {
+      // page size 0 = all the root nodes
       const page = await firstValueFrom(
         this._treeStoreService.getRootNodes(treeId, { pageNumber: 1, pageSize: 0 }),
       );
+      // ignore stale responses when the tree ID changed meanwhile
+      if (treeId !== this.treeId()) {
+        return;
+      }
       this.topNodes.set(page.items);
     } catch (error) {
       console.error('Failed to load top nodes:', error);

@@ -102,6 +102,7 @@ export class TaxoStoreLookupService implements RefLookupService {
   /**
    * Get a single item by its native ID.
    * @param id The item's numeric ID (as string) or string key in the format "treeId.key".
+   * As keys can contain dots, the tree ID is everything before the first dot.
    * @returns Observable of the item, or undefined if not found.
    * The returned item must have the same shape as items from lookup().
    */
@@ -112,8 +113,11 @@ export class TaxoStoreLookupService implements RefLookupService {
       return this._taxoStoreService.getNode(nodeId).pipe(map((node) => node ?? undefined));
     }
 
-    // the string ID is expected to be in the format "treeId.key"
-    const [treeId, key] = id.split('.', 2);
+    // the string ID is expected to be in the format "treeId.key",
+    // where key can include dots (e.g. "animals.animal.bird")
+    const i = id.indexOf('.');
+    const treeId = i > -1 ? id.substring(0, i) : '';
+    const key = i > -1 ? id.substring(i + 1) : '';
     if (!treeId || !key) {
       return of(undefined);
     }
