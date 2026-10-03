@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { retry, catchError, map, switchMap } from 'rxjs/operators';
+import { retry, catchError } from 'rxjs/operators';
 
 import { EnvService, ErrorService, DataPage, PagingOptions } from '@myrmidon/ngx-tools';
 
@@ -17,7 +17,9 @@ export interface TaxoStoreTreeFilter {
 }
 
 /**
- * Specifies the modes used to determine how node flags are matched.
+ * Specifies the modes used to determine how node flags are matched:
+ * any (at least one of the flags), all (all the flags), or none (none of
+ * the flags must be present).
  */
 export enum TaxoStoreNodeFlagMatchMode {
   Any = 'any',
@@ -33,9 +35,20 @@ export interface TaxoStoreNodeFilter {
   pageSize: number;
   treeId?: string;
   parentId?: number;
+  /**
+   * Any part of the node's key.
+   */
   key?: string;
+  /**
+   * Any part of the node's parent key.
+   */
   parentKey?: string;
-  ancestorKey?: string[];
+  /**
+   * The exact key of an ancestor node: when set, only descendants (at any
+   * depth) of the node(s) with this key are matched. This can be combined
+   * with matchDescendants.
+   */
+  ancestorKey?: string;
   filteredLabel?: string;
   flags?: string;
   flagMatchMode: TaxoStoreNodeFlagMatchMode;
@@ -104,19 +117,6 @@ export class TaxoStoreService {
   }
 
   /**
-   * Extract the ID of a newly created node from the Location header
-   * of a 201 response, e.g. `.../nodes/123`.
-   * @param response The response.
-   * @returns The ID, or null if not available (the header is not exposed
-   * to cross-origin clients unless the server allows it).
-   */
-  private getIdFromLocation(response: HttpResponse<unknown>): number | null {
-    const location = response.headers?.get('Location');
-    const m = location ? /\/(\d+)\/?$/.exec(location) : null;
-    return m ? parseInt(m[1], 10) : null;
-  }
-
-  /**
    * Get a single tree by ID.
    * @param id The tree ID.
    * @returns Observable of the tree or null if not found.
@@ -151,11 +151,9 @@ export class TaxoStoreService {
    * @returns Observable of the tree ID.
    */
   public addTree(tree: TaxoStoreTree): Observable<string> {
-    // the API returns 201 with an empty body
-    return this._http.post<unknown>(`${this.getApiUrl()}trees`, tree).pipe(
-      map(() => tree.id),
-      catchError(this._error.handleError),
-    );
+    return this._http
+      .post<string>(`${this.getApiUrl()}trees`, tree)
+      .pipe(catchError(this._error.handleError));
   }
 
   /**
@@ -270,33 +268,15 @@ export class TaxoStoreService {
 
   /**
    * Add a new node (when its ID is 0) or update an existing one.
+   * The API rejects invalid nodes (e.g. with a parent in another tree, or
+   * creating a cycle) with 400, and duplicate keys with 409.
    * @param node The node to add or update.
    * @returns Observable of the node ID (the new one when adding).
    */
   public addNode(node: TaxoStoreNode): Observable<number> {
-    // the API returns 201 with an empty body and the new node's URL
-    // in the Location header, which might not be readable cross-origin;
-    // in this case, the new node is got by its tree and key
-    return this._http.post<unknown>(`${this.getApiUrl()}nodes`, node, { observe: 'response' }).pipe(
-      catchError(this._error.handleError),
-      switchMap((response) => {
-        if (node.id > 0) {
-          return of(node.id);
-        }
-        const id = this.getIdFromLocation(response);
-        if (id !== null) {
-          return of(id);
-        }
-        return this.getNodeFromKey(node.treeId, node.key).pipe(
-          map((saved) => {
-            if (!saved) {
-              throw new Error(`Added node not found: ${node.treeId}/${node.key}`);
-            }
-            return saved.id;
-          }),
-        );
-      }),
-    );
+    return this._http
+      .post<number>(`${this.getApiUrl()}nodes`, node)
+      .pipe(catchError(this._error.handleError));
   }
 
   /**

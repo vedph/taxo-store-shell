@@ -1,5 +1,10 @@
 # History
 
+- 2026-10-03: aligned to TaxoStore API 0.0.9 fixes:
+  - removed `@myrmidon/cadmus-part-taxo-store-nodes` (moved elsewhere), including its leftover references in `tsconfig.json`.
+  - `@myrmidon/taxo-store-api`:
+    - `addNode` and `addTree` now get the ID from the response body, as returned by the API. This removes the previous workaround getting the new node ID from the `Location` header or by looking up the node by its key.
+    - `TaxoStoreNodeFilter.ancestorKey` is now a single string (it was a string array, while the API accepts a single exact key); documented filter properties and flag match modes (`none` = none of the flags present).
 - 2026-10-03: tests (Vitest) and fixes:
   - added `@vitest/coverage-v8` to allow running tests with `--coverage`.
   - `@myrmidon/taxo-store-api`:

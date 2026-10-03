@@ -119,8 +119,8 @@ describe('TaxoStoreService', () => {
     const req = http.expectOne(`${URL}trees`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(tree);
-    // the API returns 201 with no body
-    req.flush(null, { status: 201, statusText: 'Created' });
+    // the API returns 201 with the tree ID in the body
+    req.flush('new', { status: 201, statusText: 'Created' });
     expect(await p).toBe('new');
   });
 
@@ -211,7 +211,7 @@ describe('TaxoStoreService', () => {
         parentId: 0,
         key: 'k',
         parentKey: 'pk',
-        ancestorKey: ['a1', 'a2'],
+        ancestorKey: 'a.b',
         filteredLabel: 'lab',
         flags: 'ab',
         flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
@@ -228,7 +228,7 @@ describe('TaxoStoreService', () => {
     expect(params.get('parentId')).toBe('0');
     expect(params.get('key')).toBe('k');
     expect(params.get('parentKey')).toBe('pk');
-    expect(params.getAll('ancestorKey')).toEqual(['a1', 'a2']);
+    expect(params.getAll('ancestorKey')).toEqual(['a.b']);
     expect(params.get('filteredLabel')).toBe('lab');
     expect(params.get('flags')).toBe('ab');
     expect(params.get('flagMatchMode')).toBe('all');
@@ -276,40 +276,21 @@ describe('TaxoStoreService', () => {
     await p;
   });
 
-  it('addNode should return the ID of an updated node', async () => {
-    const node = makeNode(5);
+  it('addNode should post node and return its ID', async () => {
+    const node = makeNode(0, 'new');
     const p = firstValueFrom(service.addNode(node));
     const req = http.expectOne(`${URL}nodes`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(node);
-    req.flush(null, { status: 201, statusText: 'Created' });
-    expect(await p).toBe(5);
-  });
-
-  it('addNode should get the new ID from Location header', async () => {
-    const p = firstValueFrom(service.addNode(makeNode(0, 'new')));
-    http.expectOne(`${URL}nodes`).flush(null, {
-      status: 201,
-      statusText: 'Created',
-      headers: { Location: `${URL}nodes/42` },
-    });
+    // the API returns 201 with the node ID in the body
+    req.flush(42, { status: 201, statusText: 'Created' });
     expect(await p).toBe(42);
   });
 
-  it('addNode should get the new ID by key when Location is not available', async () => {
-    const p = firstValueFrom(service.addNode(makeNode(0, 'new')));
-    http.expectOne(`${URL}nodes`).flush(null, { status: 201, statusText: 'Created' });
-    http.expectOne(`${URL}nodes/tree/t/key/new`).flush(makeNode(43, 'new'));
-    expect(await p).toBe(43);
-  });
-
-  it('addNode should error when the new node cannot be found', async () => {
-    const p = firstValueFrom(service.addNode(makeNode(0, 'new')));
-    http.expectOne(`${URL}nodes`).flush(null, { status: 201, statusText: 'Created' });
-    http
-      .expectOne(`${URL}nodes/tree/t/key/new`)
-      .flush(null, { status: 404, statusText: 'Not Found' });
-    await expect(p).rejects.toThrow('Added node not found');
+  it('addNode should error on conflict', async () => {
+    const p = firstValueFrom(service.addNode(makeNode(0)));
+    http.expectOne(`${URL}nodes`).flush('duplicate key', { status: 409, statusText: 'Conflict' });
+    await expect(p).rejects.toBe('Server error: duplicate key');
   });
 
   it('addNode should error without retrying on failure', async () => {
