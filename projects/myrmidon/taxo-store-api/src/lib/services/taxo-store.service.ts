@@ -277,28 +277,26 @@ export class TaxoStoreService {
     // the API returns 201 with an empty body and the new node's URL
     // in the Location header, which might not be readable cross-origin;
     // in this case, the new node is got by its tree and key
-    return this._http
-      .post<unknown>(`${this.getApiUrl()}nodes`, node, { observe: 'response' })
-      .pipe(
-        catchError(this._error.handleError),
-        switchMap((response) => {
-          if (node.id > 0) {
-            return of(node.id);
-          }
-          const id = this.getIdFromLocation(response);
-          if (id !== null) {
-            return of(id);
-          }
-          return this.getNodeFromKey(node.treeId, node.key).pipe(
-            map((saved) => {
-              if (!saved) {
-                throw new Error(`Added node not found: ${node.treeId}/${node.key}`);
-              }
-              return saved.id;
-            }),
-          );
-        }),
-      );
+    return this._http.post<unknown>(`${this.getApiUrl()}nodes`, node, { observe: 'response' }).pipe(
+      catchError(this._error.handleError),
+      switchMap((response) => {
+        if (node.id > 0) {
+          return of(node.id);
+        }
+        const id = this.getIdFromLocation(response);
+        if (id !== null) {
+          return of(id);
+        }
+        return this.getNodeFromKey(node.treeId, node.key).pipe(
+          map((saved) => {
+            if (!saved) {
+              throw new Error(`Added node not found: ${node.treeId}/${node.key}`);
+            }
+            return saved.id;
+          }),
+        );
+      }),
+    );
   }
 
   /**

@@ -438,9 +438,7 @@ describe('TaxoStoreEditor', () => {
 
   it('should fall back to ensureNodeVisible for roots beyond page 1', async () => {
     await setup({ pageSize: 1 });
-    const ensure = vi
-      .spyOn(PagedTreeStore.prototype, 'ensureNodeVisible')
-      .mockResolvedValue(true);
+    const ensure = vi.spyOn(PagedTreeStore.prototype, 'ensureNodeVisible').mockResolvedValue(true);
     dialogResult = { node: { id: 0, treeId: 't', key: 'c', label: 'C', filteredLabel: 'c' } };
     await component.addSiblingNode(asTreeNode(await nodeById(1)));
     expect(ensure).toHaveBeenCalledWith(5, undefined, false);
