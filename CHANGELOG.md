@@ -5,6 +5,9 @@
   - `@myrmidon/taxo-store-api`:
     - `addNode` and `addTree` now get the ID from the response body, as returned by the API. This removes the previous workaround getting the new node ID from the `Location` header or by looking up the node by its key.
     - `TaxoStoreNodeFilter.ancestorKey` is now a single string (it was a string array, while the API accepts a single exact key); documented filter properties and flag match modes (`none` = none of the flags present).
+  - `@myrmidon/taxo-store-picker`:
+    - the top node (category) filter now restricts lookup to all the descendants of the selected top node, via the API `ancestorKey` filter. It previously used a partial match on the parent key, which matched only direct children, or deeper descendants only when their parent key happened to contain the top node key.
+    - `TaxoStoreLookupOptions` has a new `ancestorKey` option.
 - 2026-10-03: tests (Vitest) and fixes:
   - added `@vitest/coverage-v8` to allow running tests with `--coverage`.
   - `@myrmidon/taxo-store-api`:

@@ -87,7 +87,8 @@ export class TaxoStorePicker {
   /**
    * True if this component should show a top-level nodes filter
    * in a select control, showing a list of top-level nodes to filter by.
-   * This is an additional filter for lookup (node's parentKey).
+   * This is an additional filter for lookup, restricting it to the
+   * descendants of the selected top-level node (node's ancestorKey).
    */
   public readonly hasTopNodeFilter = input<boolean>(true);
 
@@ -192,7 +193,7 @@ export class TaxoStorePicker {
 
     const topNodeKey = this.selectedTopNodeKey();
     if (topNodeKey) {
-      options.parentKey = topNodeKey;
+      options.ancestorKey = topNodeKey;
     }
 
     const flags = this.selectedFlags();

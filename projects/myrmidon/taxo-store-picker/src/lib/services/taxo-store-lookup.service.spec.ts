@@ -73,7 +73,12 @@ describe('TaxoStoreLookupService', () => {
     await firstValueFrom(
       service.lookup(
         { treeId: 'animals', text: 'bi', limit: 3 },
-        { parentKey: 'animal', flags: 'ab', flagMatchMode: TaxoStoreNodeFlagMatchMode.All },
+        {
+          parentKey: 'animal',
+          ancestorKey: 'animal.bird',
+          flags: 'ab',
+          flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
+        },
       ),
     );
     expect(api.getNodes).toHaveBeenCalledWith({
@@ -83,6 +88,7 @@ describe('TaxoStoreLookupService', () => {
       filteredLabel: 'bi',
       flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
       parentKey: 'animal',
+      ancestorKey: 'animal.bird',
       flags: 'ab',
     });
   });

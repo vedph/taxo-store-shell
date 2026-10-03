@@ -77,7 +77,7 @@ editor dialog opens, and on save the same update and refresh actions occur.
 - 🔑 `ts-taxo-store-picker`
 - ▶️ input:
   - `treeId`\*: the ID of the tree to display and edit.
-  - `hasTopNodeFilter`: true if this component should show a top-level nodes filter in a select control, showing a list of top-level nodes to filter by. This is an additional filter for lookup (node's `parentKey`).
+  - `hasTopNodeFilter`: true if this component should show a top-level nodes filter in a select control, showing a list of top-level nodes to filter by. This is an additional filter for lookup, restricting it to the descendants (at any depth) of the selected top-level node (node's `ancestorKey`).
   - `hasFlagsFilter`: true if this component should show a flags filter in a select control, showing a list of node flags to filter by. This is an additional filter for lookup (node's flags).
   - `availableFlags`: the available flags to filter by. For each flag, an object with `id` and `name` is expected. This is used only if `hasFlagsFilter` is true.
   - `canEdit`: whether users can edit nodes. Default is true.

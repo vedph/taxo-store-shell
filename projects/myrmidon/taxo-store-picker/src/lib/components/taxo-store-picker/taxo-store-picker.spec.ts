@@ -102,7 +102,7 @@ describe('TaxoStorePicker', () => {
   it('should reset selected top node and reload when tree changes', async () => {
     await setup();
     component.onTopNodeChange('animal');
-    expect(component.lookupOptions()).toEqual({ parentKey: 'animal' });
+    expect(component.lookupOptions()).toEqual({ ancestorKey: 'animal' });
     const otherRoots = [{ ...roots[0], id: 9, treeId: 'u', key: 'x' }];
     api.getRootNodes.mockReturnValue(of(page(otherRoots)));
     fixture.componentRef.setInput('treeId', 'u');
@@ -158,7 +158,7 @@ describe('TaxoStorePicker', () => {
     component.onFlagMatchModeChange(TaxoStoreNodeFlagMatchMode.All);
     component.onTopNodeChange('plant');
     expect(component.lookupOptions()).toEqual({
-      parentKey: 'plant',
+      ancestorKey: 'plant',
       flags: 'ab',
       flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
     });

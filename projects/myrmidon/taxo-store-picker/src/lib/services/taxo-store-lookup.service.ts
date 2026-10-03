@@ -26,9 +26,15 @@ export interface TaxoStoreLookupFilter extends RefLookupFilter {
  */
 export interface TaxoStoreLookupOptions {
   /**
-   * The key of the parent node. When specified, only children of this parent are searched.
+   * Any part of the key of the parent node. When specified, only children
+   * of the matching parent(s) are searched.
    */
   parentKey?: string;
+  /**
+   * The exact key of an ancestor node. When specified, only descendants
+   * (at any depth) of this node are searched.
+   */
+  ancestorKey?: string;
   /**
    * The flags to filter by. When specified, only nodes with matching flags are returned.
    */
@@ -58,7 +64,8 @@ export class TaxoStoreLookupService implements RefLookupService {
   /**
    * Lookup nodes by their filtered label.
    * @param filter The lookup filter containing the search text and tree ID.
-   * @param options Optional filtering options (parentKey, flags, flagMatchMode).
+   * @param options Optional filtering options (parentKey, ancestorKey, flags,
+   * flagMatchMode).
    * @returns Observable of matching TaxoStoreNode items.
    */
   public lookup(
@@ -82,6 +89,9 @@ export class TaxoStoreLookupService implements RefLookupService {
     // Add optional filters from options
     if (options?.parentKey) {
       nodeFilter.parentKey = options.parentKey;
+    }
+    if (options?.ancestorKey) {
+      nodeFilter.ancestorKey = options.ancestorKey;
     }
     if (options?.flags) {
       nodeFilter.flags = options.flags;
