@@ -1,5 +1,6 @@
 # History
 
+- 2026-10-13: updated Angular and packages.
 - 2026-10-03: aligned to TaxoStore API 0.0.9 fixes:
   - removed `@myrmidon/cadmus-part-taxo-store-nodes` (moved elsewhere), including its leftover references in `tsconfig.json`.
   - `@myrmidon/taxo-store-api`:
