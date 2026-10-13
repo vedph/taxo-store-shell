@@ -39,7 +39,7 @@ export class TaxoStoreEditorPage implements OnInit {
     validators: Validators.required,
   });
 
-  public readonly availableTrees = signal<{ id: string; name: string }[]>([]);
+  public readonly availableTrees = signal<{ id: string; name: string; flat?: boolean }[]>([]);
   public readonly selectedTreeId = signal<string | null>(null);
   public readonly loading = signal(false);
   public readonly pickedNode = signal<TaxoStoreTreeNode | null>(null);
@@ -54,7 +54,7 @@ export class TaxoStoreEditorPage implements OnInit {
       const page = await firstValueFrom(
         this._taxoStoreService.getTrees({ pageNumber: 1, pageSize: 100 }),
       );
-      this.availableTrees.set(page.items.map((t) => ({ id: t.id, name: t.name })));
+      this.availableTrees.set(page.items.map((t) => ({ id: t.id, name: t.name, flat: t.flat })));
     } catch (error) {
       console.error('Failed to load trees:', error);
       this._snackBar.open('Failed to load available trees', 'Dismiss', {

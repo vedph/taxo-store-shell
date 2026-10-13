@@ -1,40 +1,77 @@
 <h2 mat-dialog-title>{{ isNew ? 'New Node' : 'Edit Node' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="form">
-    <mat-form-field>
-      <input matInput [formControl]="key" placeholder="key" />
-      @if (key.hasError('required')) {
-        <mat-error>Key is required</mat-error>
-      }
-    </mat-form-field>
+  <mat-tab-group [selectedIndex]="selectedTab()" (selectedIndexChange)="selectedTab.set($event)">
+    <!-- General -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        General
+        @if (form.invalid && selectedTab() !== 0) {
+          <mat-icon class="tab-icon tab-error" aria-hidden="false" aria-label="has errors"
+            >error</mat-icon
+          >
+        }
+      </ng-template>
 
-    <mat-form-field>
-      <input matInput [formControl]="label" placeholder="label" />
-      @if (label.hasError('required')) {
-        <mat-error>Label is required</mat-error>
-      }
-    </mat-form-field>
+      <form [formGroup]="form">
+        <mat-form-field>
+          <input matInput [formControl]="key" placeholder="key" />
+          @if (key.hasError('required')) {
+            <mat-error>Key is required</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field>
-      <input matInput [formControl]="filteredLabel" placeholder="filtered label (optional)" />
-      <mat-hint>Used for search; defaults to label if empty</mat-hint>
-    </mat-form-field>
+        <mat-form-field>
+          <input matInput [formControl]="label" placeholder="label" />
+          @if (label.hasError('required')) {
+            <mat-error>Label is required</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field>
-      <input matInput [formControl]="flags" placeholder="flags (optional)" />
-      <mat-hint>Single characters for categorization</mat-hint>
-    </mat-form-field>
+        <mat-form-field>
+          <input matInput [formControl]="filteredLabel" placeholder="filtered label (optional)" />
+          <mat-hint>Used for search; defaults to label if empty</mat-hint>
+        </mat-form-field>
 
-    <mat-form-field>
-      <textarea matInput [formControl]="note" placeholder="note (optional)" rows="3"></textarea>
-    </mat-form-field>
-  </form>
+        <mat-form-field>
+          <input matInput [formControl]="flags" placeholder="flags (optional)" />
+          <mat-hint>Single characters for categorization</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field>
+          <textarea matInput [formControl]="note" placeholder="note (optional)" rows="3"></textarea>
+        </mat-form-field>
+      </form>
+    </mat-tab>
+
+    <!-- Mappings -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        Mappings ({{ mappings().length }})
+        @if (mappingEditing() && selectedTab() !== 1) {
+          <mat-icon class="tab-icon" aria-hidden="false" aria-label="editing in progress"
+            >edit</mat-icon
+          >
+        }
+      </ng-template>
+
+      <ts-taxo-store-node-mappings
+        [mappings]="mappings()"
+        (mappingsChange)="onMappingsChange($event)"
+      />
+    </mat-tab>
+  </mat-tab-group>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button type="button" mat-button (click)="cancel()">Cancel</button>
-  <button type="button" mat-flat-button color="primary" [disabled]="form.invalid" (click)="save()">
+  <button
+    type="button"
+    mat-flat-button
+    color="primary"
+    [disabled]="form.invalid || mappingEditing()"
+    (click)="save()"
+  >
     {{ isNew ? 'Create' : 'Save' }}
   </button>
 </mat-dialog-actions>

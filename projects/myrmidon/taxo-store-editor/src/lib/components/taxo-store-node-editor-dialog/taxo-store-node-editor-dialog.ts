@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -11,16 +19,21 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { TaxoStoreNode } from '@myrmidon/taxo-store-api';
+import { TaxoStoreNode, TaxoStoreNodeMapping } from '@myrmidon/taxo-store-api';
+
+import { TaxoStoreNodeMappings } from '../taxo-store-node-mappings/taxo-store-node-mappings';
 
 /**
  * Data passed to the node editor dialog.
  */
 export interface TaxoStoreNodeEditorDialogData {
   /**
-   * The node being edited, or undefined for a new node.
+   * The node being edited, or undefined for a new node. To edit its
+   * mappings, the node must have been got with them: when its mappings
+   * are null or undefined, they are saved only if the user changes them.
    */
   node?: TaxoStoreNode;
 
@@ -46,7 +59,9 @@ export interface TaxoStoreNodeEditorDialogResult {
 }
 
 /**
- * Dialog component for editing or creating a taxo store node.
+ * Dialog component for editing or creating a taxo store node. The dialog
+ * has two tabs: general, with the node's own data, and mappings, with the
+ * mappings of the node to external resources.
  */
 @Component({
   selector: 'ts-taxo-store-node-editor-dialog',
@@ -58,7 +73,9 @@ export interface TaxoStoreNodeEditorDialogResult {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatTabsModule,
     MatTooltipModule,
+    TaxoStoreNodeMappings,
   ],
   templateUrl: './taxo-store-node-editor-dialog.html',
   styleUrls: ['./taxo-store-node-editor-dialog.scss'],
@@ -77,6 +94,18 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
   public form: FormGroup;
 
   public isNew = false;
+
+  private readonly _mappingsEditor = viewChild(TaxoStoreNodeMappings);
+  private _mappingsChanged = false;
+
+  public readonly selectedTab = signal(0);
+  public readonly mappings = signal<TaxoStoreNodeMapping[]>([]);
+
+  /**
+   * True while a mapping is being added or edited in the mappings tab.
+   * The node can't be saved until that mapping is saved or cancelled.
+   */
+  public readonly mappingEditing = computed(() => this._mappingsEditor()?.editing() ?? false);
 
   constructor() {
     this.key = this._fb.control<string>('', { nonNullable: true, validators: Validators.required });
@@ -105,8 +134,14 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
       this.filteredLabel.setValue(this.data.node.filteredLabel);
       this.flags.setValue(this.data.node.flags ?? '');
       this.note.setValue(this.data.node.note ?? '');
+      this.mappings.set(this.data.node.mappings ?? []);
       this.form.markAsPristine();
     }
+  }
+
+  public onMappingsChange(mappings: TaxoStoreNodeMapping[]): void {
+    this.mappings.set(mappings);
+    this._mappingsChanged = true;
   }
 
   public cancel(): void {
@@ -114,9 +149,14 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
   }
 
   public save(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.mappingEditing()) {
       return;
     }
+
+    // saving an array of mappings replaces all the mappings of the node,
+    // so do not save them when they were not loaded, unless changed
+    const saveMappings =
+      this.isNew || this._mappingsChanged || Array.isArray(this.data.node?.mappings);
 
     const node: TaxoStoreNode = {
       id: this.data.node?.id ?? 0,
@@ -127,6 +167,7 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
       filteredLabel: this.filteredLabel.value.trim() || this.label.value.trim(),
       flags: this.flags.value.trim() || undefined,
       note: this.note.value.trim() || undefined,
+      mappings: saveMappings ? this.mappings() : undefined,
     };
 
     this._dialogRef.close({ node } as TaxoStoreNodeEditorDialogResult);

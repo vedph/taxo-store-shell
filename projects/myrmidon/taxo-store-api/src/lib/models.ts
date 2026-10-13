@@ -30,6 +30,34 @@ export interface TaxoStoreTree {
    * An optional note attached to the tree.
    */
   note?: string;
+  /**
+   * True if the tree is flat, i.e. all its nodes are root nodes, so that
+   * it is just a list. This is defined when the tree is created; the store
+   * rejects nodes with a parent in a flat tree.
+   */
+  flat?: boolean;
+}
+
+/**
+ * The mapping of a node to an equivalent entity in an external resource
+ * (e.g. an authority file like VIAF). The pair scope + target is unique
+ * within a node.
+ */
+export interface TaxoStoreNodeMapping {
+  /**
+   * The scope of the target, i.e. the identifier of the external resource
+   * the target belongs to (e.g. `viaf`). Max 100 characters.
+   */
+  scope: string;
+  /**
+   * The target ID, i.e. the identifier of the equivalent entity in the
+   * external resource defined by scope. Max 500 characters.
+   */
+  target: string;
+  /**
+   * An optional human-friendly label for the target. Max 500 characters.
+   */
+  label?: string;
 }
 
 /**
@@ -87,4 +115,11 @@ export interface TaxoStoreNode {
    * Only present when position data is requested.
    */
   hasChildren?: boolean;
+  /**
+   * The mappings of this node to external resources. When reading, these
+   * are present only when requested (includeMappings), else they are null
+   * or undefined. When saving, null or undefined mappings leave the node's
+   * mappings untouched, while an array (even when empty) replaces them all.
+   */
+  mappings?: TaxoStoreNodeMapping[] | null;
 }

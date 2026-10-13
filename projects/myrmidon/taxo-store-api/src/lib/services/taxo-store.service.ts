@@ -68,6 +68,22 @@ export interface TaxoStoreNodeFilter {
    * reverse-recursive SQL CTE on the server side.
    */
   matchDescendants?: boolean;
+  /**
+   * The exact scope of a mapping of the node: when set, only nodes having
+   * at least one mapping with this scope are matched.
+   */
+  mappingScope?: string;
+  /**
+   * The exact target of a mapping of the node: when set, only nodes having
+   * at least one mapping with this target (and with mappingScope, when set)
+   * are matched.
+   */
+  mappingTarget?: string;
+  /**
+   * If true, include the mappings of each node in the response.
+   * Default is false for better performance.
+   */
+  includeMappings?: boolean;
 }
 
 /**
@@ -173,21 +189,30 @@ export class TaxoStoreService {
    * Get a single node by tree ID and key.
    * @param treeId The tree ID.
    * @param key The node key.
+   * @param includeMappings If true, include the node's mappings.
    * @returns Observable of the node or null if not found.
    */
-  public getNodeFromKey(treeId: string, key: string): Observable<TaxoStoreNode | null> {
+  public getNodeFromKey(
+    treeId: string,
+    key: string,
+    includeMappings = false,
+  ): Observable<TaxoStoreNode | null> {
     return this.getOptional<TaxoStoreNode>(
-      `${this.getApiUrl()}nodes/tree/${encodeURIComponent(treeId)}/key/${encodeURIComponent(key)}`,
+      `${this.getApiUrl()}nodes/tree/${encodeURIComponent(treeId)}/key/${encodeURIComponent(key)}` +
+        (includeMappings ? '?includeMappings=true' : ''),
     );
   }
 
   /**
    * Get a single node by ID.
    * @param id The node ID.
+   * @param includeMappings If true, include the node's mappings.
    * @returns Observable of the node or null if not found.
    */
-  public getNode(id: number): Observable<TaxoStoreNode | null> {
-    return this.getOptional<TaxoStoreNode>(`${this.getApiUrl()}nodes/${id}`);
+  public getNode(id: number, includeMappings = false): Observable<TaxoStoreNode | null> {
+    return this.getOptional<TaxoStoreNode>(
+      `${this.getApiUrl()}nodes/${id}` + (includeMappings ? '?includeMappings=true' : ''),
+    );
   }
 
   /**
@@ -234,6 +259,15 @@ export class TaxoStoreService {
     if (filter.matchDescendants) {
       params.matchDescendants = 'true';
     }
+    if (filter.mappingScope) {
+      params.mappingScope = filter.mappingScope;
+    }
+    if (filter.mappingTarget) {
+      params.mappingTarget = filter.mappingTarget;
+    }
+    if (filter.includeMappings) {
+      params.includeMappings = 'true';
+    }
 
     return this._http
       .get<DataPage<TaxoStoreNode>>(`${this.getApiUrl()}nodes`, { params })
@@ -246,12 +280,14 @@ export class TaxoStoreService {
    * @param options Paging options.
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
+   * @param includeMappings If true, include the mappings of each node.
    * @returns Observable of a page of root nodes.
    */
   public getRootNodes(
     treeId: string,
     options: PagingOptions,
     includePosition = false,
+    includeMappings = false,
   ): Observable<DataPage<TaxoStoreNode>> {
     const params: any = {
       pageNumber: options.pageNumber.toString(),
@@ -259,6 +295,9 @@ export class TaxoStoreService {
     };
     if (includePosition) {
       params.includePosition = 'true';
+    }
+    if (includeMappings) {
+      params.includeMappings = 'true';
     }
 
     return this._http
@@ -268,8 +307,12 @@ export class TaxoStoreService {
 
   /**
    * Add a new node (when its ID is 0) or update an existing one.
-   * The API rejects invalid nodes (e.g. with a parent in another tree, or
-   * creating a cycle) with 400, and duplicate keys with 409.
+   * The API rejects invalid nodes (e.g. with a parent in another tree,
+   * creating a cycle, having a parent in a flat tree, or with duplicate
+   * mappings) with 400, and duplicate keys with 409.
+   * When the node's mappings are an array, they replace all the mappings
+   * of that node (an empty array removes them all); when they are null or
+   * undefined, the mappings of the node are left untouched.
    * @param node The node to add or update.
    * @returns Observable of the node ID (the new one when adding).
    */
@@ -317,12 +360,20 @@ export class TaxoStoreService {
    * @param id The parent node ID.
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
+   * @param includeMappings If true, include the mappings of each node.
    * @returns Observable of an array of child nodes.
    */
-  public getChildNodes(id: number, includePosition = false): Observable<TaxoStoreNode[]> {
+  public getChildNodes(
+    id: number,
+    includePosition = false,
+    includeMappings = false,
+  ): Observable<TaxoStoreNode[]> {
     const params: any = {};
     if (includePosition) {
       params.includePosition = 'true';
+    }
+    if (includeMappings) {
+      params.includeMappings = 'true';
     }
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/children`, { params })
@@ -334,12 +385,20 @@ export class TaxoStoreService {
    * @param id The ancestor node ID.
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
+   * @param includeMappings If true, include the mappings of each node.
    * @returns Observable of an array of descendant nodes.
    */
-  public getDescendantNodes(id: number, includePosition = false): Observable<TaxoStoreNode[]> {
+  public getDescendantNodes(
+    id: number,
+    includePosition = false,
+    includeMappings = false,
+  ): Observable<TaxoStoreNode[]> {
     const params: any = {};
     if (includePosition) {
       params.includePosition = 'true';
+    }
+    if (includeMappings) {
+      params.includeMappings = 'true';
     }
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/descendants`, { params })
@@ -351,12 +410,20 @@ export class TaxoStoreService {
    * @param id The descendant node ID.
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
+   * @param includeMappings If true, include the mappings of each node.
    * @returns Observable of an array of ancestor nodes.
    */
-  public getAncestorNodes(id: number, includePosition = false): Observable<TaxoStoreNode[]> {
+  public getAncestorNodes(
+    id: number,
+    includePosition = false,
+    includeMappings = false,
+  ): Observable<TaxoStoreNode[]> {
     const params: any = {};
     if (includePosition) {
       params.includePosition = 'true';
+    }
+    if (includeMappings) {
+      params.includeMappings = 'true';
     }
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/ancestors`, { params })

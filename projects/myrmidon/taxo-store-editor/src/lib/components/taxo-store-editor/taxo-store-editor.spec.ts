@@ -1,12 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { Observable, firstValueFrom, of } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 
 import { DataPage, PagingOptions } from '@myrmidon/ngx-tools';
 import { PagedTreeStore } from '@myrmidon/paged-data-browsers';
 import {
   TaxoNodePathStep,
   TaxoStoreNode,
+  TaxoStoreTree,
   TaxoStoreNodeFilter as ApiNodeFilter,
   TaxoStoreService,
 } from '@myrmidon/taxo-store-api';
@@ -29,6 +30,7 @@ import { TaxoStoreEditor } from './taxo-store-editor';
  */
 class FakeTaxoStoreService {
   public nodes: TaxoStoreNode[] = [];
+  public flat = false;
 
   constructor() {
     this.resetData();
@@ -81,6 +83,10 @@ class FakeTaxoStoreService {
     });
   }
 
+  public getTree = vi.fn(
+    (id: string): Observable<TaxoStoreTree | null> => of({ id, name: id, flat: this.flat }),
+  );
+
   public getRootNodes = vi.fn((treeId: string, options: PagingOptions) =>
     this.page(this.siblings(undefined, treeId), options.pageNumber, options.pageSize),
   );
@@ -95,7 +101,9 @@ class FakeTaxoStoreService {
     return this.page(all, filter.pageNumber, filter.pageSize);
   });
 
-  public getNode = vi.fn((id: number) => of(this.nodes.find((n) => n.id === id) ?? null));
+  public getNode = vi.fn((id: number, _includeMappings?: boolean) =>
+    of(this.nodes.find((n) => n.id === id) ?? null),
+  );
 
   public addNode = vi.fn((node: TaxoStoreNode): Observable<number> => {
     if (node.id) {
@@ -175,6 +183,14 @@ describe('TaxoStoreEditor', () => {
     return n;
   }
 
+  function addButton(): HTMLButtonElement | null {
+    return el().querySelector<HTMLButtonElement>('.top-toolbar button');
+  }
+
+  function editorDialogConfig(data: unknown): unknown {
+    return { data, width: '720px', maxWidth: '95vw' };
+  }
+
   beforeEach(async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -242,16 +258,16 @@ describe('TaxoStoreEditor', () => {
       'Pick this node',
       'Edit this node',
       'Add child node',
-      'Add sibling node',
     ]);
     // node 2 is a leaf: delete
     expect(rowButtons(1).map((b) => b.getAttribute('aria-label'))).toEqual([
       'Pick this node',
       'Edit this node',
       'Add child node',
-      'Add sibling node',
       'Delete this node',
     ]);
+    // a single button adds nodes at the root level
+    expect(addButton()?.textContent).toContain('Add root node');
     // flags
     expect(el().querySelector('.node-flags')?.textContent?.trim()).toBe('f');
   });
@@ -259,6 +275,7 @@ describe('TaxoStoreEditor', () => {
   it('should hide action buttons when disabled', async () => {
     await setup({ canPick: false, canEdit: false, canAdd: false, canDelete: false });
     expect(rowButtons(1).length).toBe(0);
+    expect(addButton()).toBeNull();
   });
 
   it('should emit nodePick on pick', async () => {
@@ -365,9 +382,12 @@ describe('TaxoStoreEditor', () => {
     dialogResult = { node: { ...original, label: 'B2' } };
     await component.editNode(asTreeNode(await nodeById(2)));
     await settle();
-    expect(dialog.open).toHaveBeenCalledWith(TaxoStoreNodeEditorDialog, {
-      data: { node: original, treeId: 't' },
-    });
+    // the node is got with its mappings, which are always an array
+    expect(api.getNode).toHaveBeenCalledWith(2, true);
+    expect(dialog.open).toHaveBeenCalledWith(
+      TaxoStoreNodeEditorDialog,
+      editorDialogConfig({ node: { ...original, mappings: [] }, treeId: 't' }),
+    );
     expect(api.addNode).toHaveBeenCalled();
     expect((await nodeById(2)).label).toBe('B2');
     expect(component.loading()).toBe(false);
@@ -393,9 +413,10 @@ describe('TaxoStoreEditor', () => {
     };
     await component.addChildNode(asTreeNode(await nodeById(1)));
     await settle();
-    expect(dialog.open).toHaveBeenCalledWith(TaxoStoreNodeEditorDialog, {
-      data: { treeId: 't', parentId: 1 },
-    });
+    expect(dialog.open).toHaveBeenCalledWith(
+      TaxoStoreNodeEditorDialog,
+      editorDialogConfig({ treeId: 't', parentId: 1 }),
+    );
     expect(api.getNodePath).toHaveBeenCalledWith(5, 20);
     expect(await nodeIds()).toEqual([1, 3, 4, 5, 2]);
     expect(component.loading()).toBe(false);
@@ -417,22 +438,23 @@ describe('TaxoStoreEditor', () => {
     expect(api.addNode).not.toHaveBeenCalled();
   });
 
-  it('should add a sibling node and navigate to it', async () => {
+  it('should add a root node and navigate to it', async () => {
     await setup();
     dialogResult = {
       node: { id: 0, treeId: 't', key: 'c', label: 'C', filteredLabel: 'c' },
     };
-    await component.addSiblingNode(asTreeNode(await nodeById(2)));
+    addButton()!.click();
     await settle();
-    expect(dialog.open).toHaveBeenCalledWith(TaxoStoreNodeEditorDialog, {
-      data: { treeId: 't', parentId: undefined },
-    });
+    expect(dialog.open).toHaveBeenCalledWith(
+      TaxoStoreNodeEditorDialog,
+      editorDialogConfig({ treeId: 't' }),
+    );
     expect(await nodeIds()).toEqual([1, 2, 5]);
   });
 
-  it('should not add a sibling node when dialog is cancelled', async () => {
+  it('should not add a root node when dialog is cancelled', async () => {
     await setup();
-    await component.addSiblingNode(asTreeNode(await nodeById(2)));
+    await component.addRootNode();
     expect(api.addNode).not.toHaveBeenCalled();
   });
 
@@ -440,7 +462,7 @@ describe('TaxoStoreEditor', () => {
     await setup({ pageSize: 1 });
     const ensure = vi.spyOn(PagedTreeStore.prototype, 'ensureNodeVisible').mockResolvedValue(true);
     dialogResult = { node: { id: 0, treeId: 't', key: 'c', label: 'C', filteredLabel: 'c' } };
-    await component.addSiblingNode(asTreeNode(await nodeById(1)));
+    await component.addRootNode();
     expect(ensure).toHaveBeenCalledWith(5, undefined, false);
   });
 
@@ -480,7 +502,7 @@ describe('TaxoStoreEditor', () => {
     api.nodes = [{ id: 1, treeId: 't', key: 'a', label: 'A', filteredLabel: 'a' }];
     await setup();
     dialogResult = true;
-    rowButtons(0)[4].click();
+    rowButtons(0)[3].click();
     await settle();
     expect(api.deleteNode).toHaveBeenCalledWith(1);
     expect(await nodeIds()).toEqual([]);
@@ -495,11 +517,207 @@ describe('TaxoStoreEditor', () => {
 
   it('should open dialogs from buttons', async () => {
     await setup();
-    const [, edit, addChild, addSibling] = rowButtons(1);
+    const [, edit, addChild] = rowButtons(1);
     edit.click();
     addChild.click();
-    addSibling.click();
+    addButton()!.click();
     await settle();
     expect(dialog.open).toHaveBeenCalledTimes(3);
+  });
+
+  it('should use the tree view when the tree is not found or fails', async () => {
+    api.flat = true;
+    api.getTree.mockReturnValueOnce(of(null));
+    await setup();
+    expect(component.flat()).toBe(false);
+    expect(el().querySelector('[role=tree]')).toBeTruthy();
+
+    api.getTree.mockReturnValueOnce(throwError(() => new Error('fail')));
+    fixture.componentRef.setInput('pageSize', 5);
+    await settle();
+    expect(component.flat()).toBe(false);
+    expect(await nodeIds()).toEqual([1, 2]);
+  });
+
+  describe('flat tree', () => {
+    async function page() {
+      return firstValueFrom(component.page$!);
+    }
+
+    async function pageIds(): Promise<number[]> {
+      return (await page()).items.map((n) => n.id);
+    }
+
+    function listButtons(rowIndex: number): HTMLButtonElement[] {
+      const row = el().querySelectorAll('.list-node-row')[rowIndex];
+      return Array.from(row.querySelectorAll('.node-actions button'));
+    }
+
+    beforeEach(() => {
+      api.flat = true;
+      api.nodes = [
+        { id: 1, treeId: 't', key: 'a', label: 'A', filteredLabel: 'a', flags: 'f' },
+        { id: 2, treeId: 't', key: 'c', label: 'C', filteredLabel: 'c' },
+        { id: 3, treeId: 't', key: 'e', label: 'E', filteredLabel: 'e' },
+      ];
+    });
+
+    it('should display nodes as a list', async () => {
+      await setup();
+      expect(component.flat()).toBe(true);
+      expect(component.nodes$).toBeUndefined();
+      expect(await pageIds()).toEqual([1, 2, 3]);
+      expect(api.getRootNodes).toHaveBeenCalledWith('t', { pageNumber: 1, pageSize: 20 });
+      expect(el().querySelector('[role=tree]')).toBeNull();
+      const rows = el().querySelectorAll('.list-node-row');
+      expect(rows.length).toBe(3);
+      expect(rows[0].querySelector('.node-key')?.textContent).toBe('a');
+      expect(rows[0].querySelector('.node-label')?.textContent).toBe('A');
+      expect(rows[0].querySelector('.node-flags')?.textContent?.trim()).toBe('f');
+      // a single page needs no pager
+      expect(el().querySelector('pdb-compact-pager')).toBeNull();
+      expect(component.loading()).toBe(false);
+    });
+
+    it('should not offer to add children', async () => {
+      await setup();
+      expect(listButtons(0).map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Pick this node',
+        'Edit this node',
+        'Delete this node',
+      ]);
+      expect(addButton()?.textContent).toContain('Add node');
+    });
+
+    it('should show empty message when no nodes', async () => {
+      api.nodes = [];
+      await setup();
+      expect(el().querySelector('.list-nodes')).toBeNull();
+      expect(el().querySelector('.empty-message')?.textContent).toContain('No nodes found');
+    });
+
+    it('should switch view when the tree changes', async () => {
+      await setup();
+      expect(el().querySelector('.list-nodes')).toBeTruthy();
+      api.flat = false;
+      fixture.componentRef.setInput('treeId', 'u');
+      await settle();
+      expect(component.flat()).toBe(false);
+      expect(component.page$).toBeUndefined();
+      expect(el().querySelector('.list-nodes')).toBeNull();
+    });
+
+    it('should page the list', async () => {
+      await setup({ pageSize: 2 });
+      expect(await pageIds()).toEqual([1, 2]);
+      expect(el().querySelector('pdb-compact-pager')).toBeTruthy();
+      component.onListPageChange({ pageNumber: 2 });
+      await settle();
+      expect(await pageIds()).toEqual([3]);
+      expect(component.loading()).toBe(false);
+    });
+
+    it('should filter and reset the list', async () => {
+      await setup();
+      component.onFilterChange({ label: 'c' });
+      await settle();
+      expect(await pageIds()).toEqual([2]);
+      expect(api.getNodes.mock.calls[0][0]).toMatchObject({
+        treeId: 't',
+        isRoot: true,
+        filteredLabel: 'c',
+      });
+      component.reset();
+      await settle();
+      expect(await pageIds()).toEqual([1, 2, 3]);
+    });
+
+    it('should pick a node', async () => {
+      await setup();
+      const picked: TaxoStoreTreeNode[] = [];
+      component.nodePick.subscribe((n) => picked.push(n));
+      listButtons(1)[0].click();
+      expect(picked.map((n) => n.key)).toEqual(['c']);
+    });
+
+    it('should add a node and move to its page', async () => {
+      await setup({ pageSize: 2 });
+      dialogResult = {
+        node: { id: 0, treeId: 't', key: 'd', label: 'D', filteredLabel: 'd' },
+      };
+      addButton()!.click();
+      await settle();
+      expect(dialog.open).toHaveBeenCalledWith(
+        TaxoStoreNodeEditorDialog,
+        editorDialogConfig({ treeId: 't' }),
+      );
+      // a, c | d, e
+      expect(api.getNodePath).toHaveBeenCalledWith(4, 2);
+      expect(await pageIds()).toEqual([4, 3]);
+      expect(component.hiliteId()).toBe(4);
+      expect(el().querySelector('.list-node-row.hilite .node-key')?.textContent).toBe('d');
+      expect(component.loading()).toBe(false);
+    });
+
+    it('should edit a node and refresh its page', async () => {
+      await setup();
+      dialogResult = { node: { ...api.nodes[1], label: 'C2' } };
+      listButtons(1)[1].click();
+      await settle();
+      expect(api.getNode).toHaveBeenCalledWith(2, true);
+      expect((await page()).items[1].label).toBe('C2');
+      expect(component.hiliteId()).toBe(2);
+    });
+
+    it('should stay on the current page when saving a node in a filtered list', async () => {
+      await setup();
+      component.onFilterChange({ label: 'c' });
+      await settle();
+      dialogResult = {
+        node: { id: 0, treeId: 't', key: 'cc', label: 'CC', filteredLabel: 'cc' },
+      };
+      await component.addRootNode();
+      await settle();
+      expect(api.getNodePath).not.toHaveBeenCalled();
+      expect(await pageIds()).toEqual([2, 4]);
+    });
+
+    it('should stay on the current page when the saved node is not found', async () => {
+      await setup({ pageSize: 2 });
+      component.onListPageChange({ pageNumber: 2 });
+      await settle();
+      api.getNodePath.mockReturnValueOnce(of([]));
+      dialogResult = { node: { ...api.nodes[2], label: 'E2' } };
+      await component.editNode((await page()).items[0]);
+      await settle();
+      expect((await page()).pageNumber).toBe(2);
+    });
+
+    it('should delete a node and reload its page', async () => {
+      await setup();
+      dialogResult = true;
+      listButtons(1)[2].click();
+      await settle();
+      expect(api.deleteNode).toHaveBeenCalledWith(2);
+      expect(await pageIds()).toEqual([1, 3]);
+      expect(component.loading()).toBe(false);
+    });
+
+    it('should move to the previous page after deleting the last node of a page', async () => {
+      await setup({ pageSize: 2 });
+      component.onListPageChange({ pageNumber: 2 });
+      await settle();
+      dialogResult = true;
+      await component.deleteNode((await page()).items[0]);
+      await settle();
+      expect(await pageIds()).toEqual([1, 2]);
+    });
+
+    it('should not delete a node when not confirmed', async () => {
+      await setup();
+      dialogResult = false;
+      await component.deleteNode((await page()).items[0]);
+      expect(api.deleteNode).not.toHaveBeenCalled();
+    });
   });
 });

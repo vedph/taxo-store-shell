@@ -74,3 +74,45 @@
 mat-progress-bar {
   margin-bottom: 8px;
 }
+
+.top-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.list-nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-node-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  min-height: 48px;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  &.hilite {
+    background-color: var(--mat-sys-secondary-container, #dde3ea);
+    color: var(--mat-sys-on-secondary-container, #1a1c1e);
+  }
+
+  &:hover .node-actions {
+    opacity: 1;
+  }
+}
+
+.node-key {
+  font-family: monospace;
+  color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+
+  .hilite & {
+    color: inherit;
+  }
+}

@@ -1,8 +1,8 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
-import { jwtInterceptor } from '@myrmidon/auth-jwt-login';
+import { AUTH_JWT_EXCLUDED_URLS, jwtInterceptor } from '@myrmidon/auth-jwt-login';
 
 import { routes } from './app.routes';
 
@@ -11,6 +11,11 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withViewTransitions()),
     // HTTP Client with JWT interceptor and Fetch API support
-    provideHttpClient(withInterceptors([jwtInterceptor]), withFetch()),
+    provideHttpClient(withInterceptors([jwtInterceptor])),
+    // excluded URLs for JWT interceptor
+    {
+      provide: AUTH_JWT_EXCLUDED_URLS,
+      useValue: ['https://viaf.org/viaf/'],
+    },
   ],
 };

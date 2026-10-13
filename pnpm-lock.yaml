@@ -199,6 +199,9 @@ importers:
       '@myrmidon/cadmus-refs-lookup':
         specifier: ^11.0.8
         version: 11.0.8(694da4fc88091d1eef250f3514818997)
+      '@myrmidon/cadmus-refs-viaf-lookup':
+        specifier: ^11.0.3
+        version: 11.0.3(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@myrmidon/cadmus-refs-lookup@11.0.8(694da4fc88091d1eef250f3514818997))
       '@myrmidon/ngx-mat-tools':
         specifier: ^3.0.1
         version: 3.0.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))
@@ -1018,6 +1021,13 @@ packages:
       '@myrmidon/cadmus-refs-citation': ^2.0.2
       '@myrmidon/cadmus-refs-doc-references': ^11.0.2
       '@myrmidon/cadmus-ui-object-view': ^1.0.2
+
+  '@myrmidon/cadmus-refs-viaf-lookup@11.0.3':
+    resolution: {integrity: sha512-A9xsEaziFIFD3gsgNWYczW3a9+wKNc6baw6LScjQK5jkVZYRabc8Lsobv6lGmO8AaTg1hY1NPw3+rHmugRBwBg==}
+    peerDependencies:
+      '@angular/common': ^22.2.1
+      '@angular/core': ^22.2.1
+      '@myrmidon/cadmus-refs-lookup': ^11.0.6
 
   '@myrmidon/cadmus-ui-object-view@1.0.2':
     resolution: {integrity: sha512-pss28M0V+lBWSKIgi0l7QAKI08taOtURt/IQIIKY9RjraZUMA8aav8kS+7L4buPTYy0wYAgfquHxNdhhy9iNoA==}
@@ -3911,6 +3921,13 @@ snapshots:
       '@myrmidon/cadmus-refs-citation': 2.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/material@22.2.2(a2598dc4d98968f8e39fda99caa260c4))(@myrmidon/ngx-tools@3.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/forms@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)))(rxjs@7.8.2)))
       '@myrmidon/cadmus-refs-doc-references': 11.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/material@22.2.2(a2598dc4d98968f8e39fda99caa260c4))(@myrmidon/cadmus-core@13.0.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@myrmidon/ngx-tools@3.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/forms@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)))(rxjs@7.8.2))))
       '@myrmidon/cadmus-ui-object-view': 1.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/material@22.2.2(a2598dc4d98968f8e39fda99caa260c4))
+      tslib: 2.8.1
+
+  '@myrmidon/cadmus-refs-viaf-lookup@11.0.3(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@myrmidon/cadmus-refs-lookup@11.0.8(694da4fc88091d1eef250f3514818997))':
+    dependencies:
+      '@angular/common': 22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      '@myrmidon/cadmus-refs-lookup': 11.0.8(694da4fc88091d1eef250f3514818997)
       tslib: 2.8.1
 
   '@myrmidon/cadmus-ui-object-view@1.0.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/material@22.2.2(a2598dc4d98968f8e39fda99caa260c4))':

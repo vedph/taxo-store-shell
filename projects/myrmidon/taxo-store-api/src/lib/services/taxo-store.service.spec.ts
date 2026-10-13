@@ -94,6 +94,13 @@ describe('TaxoStoreService', () => {
     await expect(p).rejects.toContain('Server error');
   });
 
+  it('getTree should get the flat property', async () => {
+    const tree: TaxoStoreTree = { id: 'tags', name: 'Tags', flat: true };
+    const p = firstValueFrom(service.getTree('tags'));
+    http.expectOne(`${URL}trees/tags`).flush(tree);
+    expect((await p)?.flat).toBe(true);
+  });
+
   it('getTrees should pass paging and name', async () => {
     const page = makePage<TaxoStoreTree>([{ id: 'a', name: 'A' }]);
     const p = firstValueFrom(service.getTrees({ pageNumber: 2, pageSize: 5, name: 'an' }));
@@ -166,6 +173,22 @@ describe('TaxoStoreService', () => {
     expect(await p).toEqual(makeNode(3));
   });
 
+  it('getNode should request mappings when specified', async () => {
+    const node: TaxoStoreNode = {
+      ...makeNode(3),
+      mappings: [{ scope: 'viaf', target: '100', label: 'Dante' }],
+    };
+    const p = firstValueFrom(service.getNode(3, true));
+    http.expectOne(`${URL}nodes/3?includeMappings=true`).flush(node);
+    expect(await p).toEqual(node);
+  });
+
+  it('getNodeFromKey should request mappings when specified', async () => {
+    const p = firstValueFrom(service.getNodeFromKey('t', 'k', true));
+    http.expectOne(`${URL}nodes/tree/t/key/k?includeMappings=true`).flush(makeNode(1));
+    await p;
+  });
+
   it('getNode should return null on 404', async () => {
     const p = firstValueFrom(service.getNode(999));
     http.expectOne(`${URL}nodes/999`).flush(null, { status: 404, statusText: 'Not Found' });
@@ -219,6 +242,9 @@ describe('TaxoStoreService', () => {
         includePosition: true,
         isRoot: true,
         matchDescendants: true,
+        mappingScope: 'viaf',
+        mappingTarget: '100',
+        includeMappings: true,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
@@ -236,6 +262,9 @@ describe('TaxoStoreService', () => {
     expect(params.get('includePosition')).toBe('true');
     expect(params.get('isRoot')).toBe('true');
     expect(params.get('matchDescendants')).toBe('true');
+    expect(params.get('mappingScope')).toBe('viaf');
+    expect(params.get('mappingTarget')).toBe('100');
+    expect(params.get('includeMappings')).toBe('true');
     req.flush(makePage([]));
     await p;
   });
@@ -249,12 +278,14 @@ describe('TaxoStoreService', () => {
         includePosition: false,
         isRoot: false,
         matchDescendants: false,
+        includeMappings: false,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
     expect(req.request.params.has('includePosition')).toBe(false);
     expect(req.request.params.has('isRoot')).toBe(false);
     expect(req.request.params.has('matchDescendants')).toBe(false);
+    expect(req.request.params.has('includeMappings')).toBe(false);
     req.flush(makePage([]));
     await p;
   });
@@ -264,6 +295,7 @@ describe('TaxoStoreService', () => {
     const req = http.expectOne((r) => r.url === `${URL}nodes/roots/t`);
     expect(req.request.params.get('pageSize')).toBe('5');
     expect(req.request.params.has('includePosition')).toBe(false);
+    expect(req.request.params.has('includeMappings')).toBe(false);
     req.flush(makePage([makeNode(1)]));
     expect((await p).items[0].id).toBe(1);
   });
@@ -274,6 +306,29 @@ describe('TaxoStoreService', () => {
     expect(req.request.params.get('includePosition')).toBe('true');
     req.flush(makePage([]));
     await p;
+  });
+
+  it('getRootNodes should request mappings when specified', async () => {
+    const p = firstValueFrom(
+      service.getRootNodes('t', { pageNumber: 1, pageSize: 5 }, false, true),
+    );
+    const req = http.expectOne((r) => r.url === `${URL}nodes/roots/t`);
+    expect(req.request.params.has('includePosition')).toBe(false);
+    expect(req.request.params.get('includeMappings')).toBe('true');
+    req.flush(makePage([]));
+    await p;
+  });
+
+  it('addNode should post the mappings of the node', async () => {
+    const node: TaxoStoreNode = {
+      ...makeNode(5),
+      mappings: [{ scope: 'viaf', target: '100' }],
+    };
+    const p = firstValueFrom(service.addNode(node));
+    const req = http.expectOne(`${URL}nodes`);
+    expect(req.request.body.mappings).toEqual([{ scope: 'viaf', target: '100' }]);
+    req.flush(5, { status: 201, statusText: 'Created' });
+    expect(await p).toBe(5);
   });
 
   it('addNode should post node and return its ID', async () => {
@@ -332,6 +387,7 @@ describe('TaxoStoreService', () => {
       const p = firstValueFrom(service[method](1));
       const req = http.expectOne((r) => r.url === `${URL}nodes/1/${path}`);
       expect(req.request.params.has('includePosition')).toBe(false);
+      expect(req.request.params.has('includeMappings')).toBe(false);
       req.flush([makeNode(2)]);
       expect((await p)[0].id).toBe(2);
     });
@@ -340,6 +396,15 @@ describe('TaxoStoreService', () => {
       const p = firstValueFrom(service[method](1, true));
       const req = http.expectOne((r) => r.url === `${URL}nodes/1/${path}`);
       expect(req.request.params.get('includePosition')).toBe('true');
+      req.flush([]);
+      await p;
+    });
+
+    it(`${method} should request mappings when specified`, async () => {
+      const p = firstValueFrom(service[method](1, false, true));
+      const req = http.expectOne((r) => r.url === `${URL}nodes/1/${path}`);
+      expect(req.request.params.has('includePosition')).toBe(false);
+      expect(req.request.params.get('includeMappings')).toBe('true');
       req.flush([]);
       await p;
     });

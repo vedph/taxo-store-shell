@@ -1,0 +1,134 @@
+<div class="toolbar">
+  <button type="button" mat-flat-button [disabled]="editing()" (click)="addMapping()">
+    <mat-icon>add</mat-icon>
+    Add mapping
+  </button>
+</div>
+
+<!-- Mappings -->
+@if (rows().length > 0) {
+  <table>
+    <thead>
+      <tr>
+        <th scope="col"><span class="visually-hidden">actions</span></th>
+        <th scope="col">scope</th>
+        <th scope="col">target</th>
+        <th scope="col">label</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track $index) {
+        <tr [class.edited]="$index === editedIndex()">
+          <td class="fit-width">
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Edit mapping"
+              [attr.aria-label]="'Edit mapping ' + row.scope + ' ' + row.target"
+              [disabled]="editing()"
+              (click)="editMapping($index)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Delete mapping"
+              [attr.aria-label]="'Delete mapping ' + row.scope + ' ' + row.target"
+              class="delete-btn"
+              [disabled]="editing()"
+              (click)="deleteMapping($index)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+            @if (row.url) {
+              <a
+                mat-icon-button
+                matTooltip="Open target"
+                [attr.aria-label]="'Open target ' + row.target + ' in a new tab'"
+                [href]="row.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <mat-icon>open_in_new</mat-icon>
+              </a>
+            }
+          </td>
+          <td>{{ row.scope }}</td>
+          <td class="target">{{ row.target }}</td>
+          <td>{{ row.label }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @else {
+  <p class="empty-message">No mappings.</p>
+}
+
+<!-- Mapping editor -->
+<mat-expansion-panel
+  [expanded]="editing()"
+  [disabled]="!editing()"
+  [hideToggle]="true"
+  (closed)="cancelMapping()"
+>
+  <mat-expansion-panel-header>
+    <mat-panel-title>{{ editorTitle() }}</mat-panel-title>
+  </mat-expansion-panel-header>
+
+  @if (editing()) {
+    <!-- Lookup -->
+    @if (configs().length > 0) {
+      <fieldset class="lookup">
+        <legend>lookup</legend>
+        <cadmus-refs-lookup-set [configs]="configs()" (itemChange)="onLookupItemChange($event)" />
+      </fieldset>
+    }
+
+    <form [formGroup]="form" (submit)="saveMapping()">
+      <div class="form-row">
+        <mat-form-field class="scope-field">
+          <mat-label>scope</mat-label>
+          <input matInput [formControl]="scope" />
+          @if (scope.hasError('required')) {
+            <mat-error>Scope is required</mat-error>
+          }
+          @if (scope.hasError('maxlength')) {
+            <mat-error>Scope is too long</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>target</mat-label>
+          <input matInput [formControl]="target" />
+          @if (target.hasError('required')) {
+            <mat-error>Target is required</mat-error>
+          }
+          @if (target.hasError('maxlength')) {
+            <mat-error>Target is too long</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <mat-form-field>
+        <mat-label>label (optional)</mat-label>
+        <input matInput [formControl]="label" />
+        @if (label.hasError('maxlength')) {
+          <mat-error>Label is too long</mat-error>
+        }
+      </mat-form-field>
+
+      @if (form.hasError('duplicate')) {
+        <mat-error role="alert">This node already has a mapping with this scope and target</mat-error>
+      }
+
+      <div class="form-row actions">
+        <button type="button" mat-button (click)="cancelMapping()">Cancel</button>
+        <button type="submit" mat-flat-button [disabled]="form.invalid">
+          <mat-icon>check</mat-icon>
+          Save mapping
+        </button>
+      </div>
+    </form>
+  }
+</mat-expansion-panel>

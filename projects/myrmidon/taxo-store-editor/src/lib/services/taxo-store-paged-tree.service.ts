@@ -69,6 +69,28 @@ export interface PagedTaxoStoreNode
   extends PagedTreeNode<TaxoStoreNodeTreeFilter>, TaxoStoreTreeNode {}
 
 /**
+ * Map a TaxoStoreNode to a TaxoStoreTreeNode (compatible with TreeNode).
+ * @param node The node to map.
+ * @returns The mapped node.
+ */
+export function toTaxoStoreTreeNode(node: TaxoStoreNode): TaxoStoreTreeNode {
+  return {
+    id: node.id,
+    // the API returns null for root nodes, while TreeNode expects undefined
+    parentId: node.parentId ?? undefined,
+    y: node.y ?? 1,
+    x: node.x ?? 1,
+    label: node.label,
+    hasChildren: node.hasChildren,
+    treeId: node.treeId,
+    key: node.key,
+    filteredLabel: node.filteredLabel,
+    flags: node.flags,
+    note: node.note,
+  };
+}
+
+/**
  * Service that adapts TreeStoreService to PagedTreeStoreService interface.
  * This service wraps the TreeStoreService to provide nodes in the format
  * expected by the paged tree browser component.
@@ -87,26 +109,6 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
 
   set treeId(value: string | undefined) {
     this._treeId = value;
-  }
-
-  /**
-   * Map a TaxoStoreNode to a TaxoStoreTreeNode (compatible with TreeNode).
-   */
-  private mapNode(node: TaxoStoreNode): TaxoStoreTreeNode {
-    return {
-      id: node.id,
-      // the API returns null for root nodes, while TreeNode expects undefined
-      parentId: node.parentId ?? undefined,
-      y: node.y ?? 1,
-      x: node.x ?? 1,
-      label: node.label,
-      hasChildren: node.hasChildren,
-      treeId: node.treeId,
-      key: node.key,
-      filteredLabel: node.filteredLabel,
-      flags: node.flags,
-      note: node.note,
-    };
   }
 
   /**
@@ -162,7 +164,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
             pageSize: page.pageSize,
             pageCount: page.pageCount,
             total: page.total,
-            items: page.items.map((node) => this.mapNode(node)),
+            items: page.items.map((node) => toTaxoStoreTreeNode(node)),
           })),
         );
       }
@@ -172,7 +174,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
           pageSize: page.pageSize,
           pageCount: page.pageCount,
           total: page.total,
-          items: page.items.map((node) => this.mapNode(node)),
+          items: page.items.map((node) => toTaxoStoreTreeNode(node)),
         })),
       );
     }
@@ -204,7 +206,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
         pageSize: page.pageSize,
         pageCount: page.pageCount,
         total: page.total,
-        items: page.items.map((node) => this.mapNode(node)),
+        items: page.items.map((node) => toTaxoStoreTreeNode(node)),
       })),
     );
   }

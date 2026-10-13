@@ -1,5 +1,20 @@
 # History
 
+- 2026-10-13: flat trees and node mappings (requires TaxoStore API 1.0.0):
+  - `@myrmidon/taxo-store-api` (1.1.0):
+    - `TaxoStoreTree` has a new `flat` property, true when all the nodes of the tree are root nodes.
+    - added `TaxoStoreNodeMapping` (`scope`, `target`, `label`) and `TaxoStoreNode.mappings`. When saving a node, an array of mappings (even when empty) replaces all the mappings of that node, while null or undefined mappings leave them untouched.
+    - `getNode`, `getNodeFromKey`, `getRootNodes`, `getChildNodes`, `getDescendantNodes`, `getAncestorNodes` have a new optional `includeMappings` parameter (false by default), and `TaxoStoreNodeFilter` a new `includeMappings` property.
+    - `TaxoStoreNodeFilter` has new `mappingScope` and `mappingTarget` properties, to find nodes from their mappings.
+  - `@myrmidon/taxo-store-editor` (1.1.0):
+    - `TaxoStoreEditor` displays a flat tree as a paged list rather than as a tree, with its nodes key and label. After adding or editing a node, the list moves to the page of that node and highlights it.
+    - ⚠️ `TaxoStoreEditor`: removed the add sibling button next to each node, and the corresponding `addSiblingNode` method. The button suggested that the new node would be added after that node, while nodes are sorted by key. It is replaced by a single button at the top, which adds a node at the root level (`addRootNode` method). The add child button is still there (except in flat trees), as it only defines the parent of the new node.
+    - `TaxoStoreNodeEditorDialog` now has two tabs: general (the previous editor) and mappings. It is wider (720px) to fit the mappings table. The node cannot be saved while a mapping is being edited. Mappings which were not loaded with the node being edited are saved only when changed.
+    - added `TaxoStoreNodeMappings` to edit the mappings of a node, either manually or via lookup. Lookup is available when lookup providers are configured in `RamStorageService` under `LOOKUP_CONFIGS_KEY` (see README); picking an item from a lookup sets scope (lookup provider ID), target (item ID) and label (item name).
+    - added `TaxoStorePagedListService` (adapter for the paged list store) and `toTaxoStoreTreeNode`.
+    - new peer dependency: `@myrmidon/cadmus-refs-lookup`.
+  - `@myrmidon/taxo-store-picker` (1.0.2): updated peer dependencies.
+  - app: configured VIAF lookup for node mappings (added `@myrmidon/cadmus-refs-viaf-lookup`); the trees list in the editor page marks flat trees.
 - 2026-10-13: updated Angular and packages.
 - 2026-10-03: aligned to TaxoStore API 0.0.9 fixes:
   - removed `@myrmidon/cadmus-part-taxo-store-nodes` (moved elsewhere), including its leftover references in `tsconfig.json`.

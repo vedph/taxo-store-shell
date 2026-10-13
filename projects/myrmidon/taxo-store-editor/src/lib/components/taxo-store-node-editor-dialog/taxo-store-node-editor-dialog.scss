@@ -3,8 +3,20 @@ form {
   flex-direction: column;
   gap: 8px;
   min-width: 320px;
+  padding-top: 16px;
 }
 
 mat-form-field {
   width: 100%;
+}
+
+.tab-icon {
+  margin-left: 4px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.tab-error {
+  color: var(--mat-sys-error, #ba1a1a);
 }

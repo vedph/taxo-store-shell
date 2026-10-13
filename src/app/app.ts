@@ -1,4 +1,13 @@
-import { Component, OnInit, Inject, OnDestroy, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Inject,
+  OnDestroy,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+  inject,
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -11,8 +20,10 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 // myrmidon
-import { EnvService } from '@myrmidon/ngx-tools';
+import { EnvService, RamStorageService } from '@myrmidon/ngx-tools';
 import { AuthJwtService, GravatarPipe, User } from '@myrmidon/auth-jwt-login';
+import { LOOKUP_CONFIGS_KEY, RefLookupConfig } from '@myrmidon/cadmus-refs-lookup';
+import { ViafRefLookupService } from '@myrmidon/cadmus-refs-viaf-lookup';
 
 @Component({
   selector: 'app-root',
@@ -55,6 +66,23 @@ export class App implements OnDestroy {
     // subscribe to currentUser$ and update the signal
     const sub = this._authService.currentUser$.subscribe((u) => this._user.set(u || undefined));
     this._subs.push(sub);
+
+    // configure the lookup providers used to pick the targets of node mappings
+    this.configureLookup(inject(RamStorageService));
+  }
+
+  private configureLookup(storage: RamStorageService): void {
+    storage.store(LOOKUP_CONFIGS_KEY, [
+      {
+        name: 'VIAF',
+        iconUrl: '/img/viaf128.png',
+        description: 'Virtual International Authority File',
+        label: 'ID',
+        service: inject(ViafRefLookupService),
+        itemIdGetter: (item: any) => item?.viafid,
+        itemLabelGetter: (item: any) => item?.term,
+      },
+    ] as RefLookupConfig[]);
   }
 
   public ngOnDestroy(): void {
