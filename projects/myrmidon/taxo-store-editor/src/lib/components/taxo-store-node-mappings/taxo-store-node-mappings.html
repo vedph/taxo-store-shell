@@ -110,13 +110,24 @@
         </mat-form-field>
       </div>
 
-      <mat-form-field>
-        <mat-label>label (optional)</mat-label>
-        <input matInput [formControl]="label" />
-        @if (label.hasError('maxlength')) {
-          <mat-error>Label is too long</mat-error>
-        }
-      </mat-form-field>
+      <div class="form-row">
+        <mat-form-field>
+          <mat-label>label (optional)</mat-label>
+          <input matInput [formControl]="label" />
+          @if (label.hasError('maxlength')) {
+            <mat-error>Label is too long</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>filtered label (optional)</mat-label>
+          <input matInput [formControl]="filteredLabel" />
+          <mat-hint>searchable label; defaults to label</mat-hint>
+          @if (filteredLabel.hasError('maxlength')) {
+            <mat-error>Filtered label is too long</mat-error>
+          }
+        </mat-form-field>
+      </div>
 
       @if (form.hasError('duplicate')) {
         <mat-error role="alert">This node already has a mapping with this scope and target</mat-error>

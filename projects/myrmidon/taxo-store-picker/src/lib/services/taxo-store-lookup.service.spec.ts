@@ -55,7 +55,7 @@ describe('TaxoStoreLookupService', () => {
     expect(api.getNodes).not.toHaveBeenCalled();
   });
 
-  it('lookup should query by label with default limit and match mode', async () => {
+  it('lookup should query by node and mapping label with default limit and match mode', async () => {
     const result = await firstValueFrom(
       service.lookup({ treeId: 'animals', text: 'bi', limit: 0 }),
     );
@@ -65,6 +65,7 @@ describe('TaxoStoreLookupService', () => {
       pageSize: 10,
       treeId: 'animals',
       filteredLabel: 'bi',
+      filteredMappingLabel: 'bi',
       flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
     });
   });
@@ -86,6 +87,7 @@ describe('TaxoStoreLookupService', () => {
       pageSize: 3,
       treeId: 'animals',
       filteredLabel: 'bi',
+      filteredMappingLabel: 'bi',
       flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
       parentKey: 'animal',
       ancestorKey: 'animal.bird',

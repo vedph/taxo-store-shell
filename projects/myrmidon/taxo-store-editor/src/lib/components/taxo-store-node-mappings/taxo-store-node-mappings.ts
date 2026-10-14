@@ -52,7 +52,8 @@ function toText(value: unknown): string {
 /**
  * Editor for the mappings of a taxo store node to external resources.
  * Mappings are listed in a table; each mapping can be added or edited
- * manually, by typing its scope, target and label, or via lookup, when any
+ * manually, by typing its scope, target, label and filtered label (which
+ * defaults to the label when empty), or via lookup, when any
  * lookup providers are configured. Picking an item from a lookup sets the
  * scope to the ID of the lookup provider, the target to the ID of the item,
  * and the label to the name of the item.
@@ -123,6 +124,7 @@ export class TaxoStoreNodeMappings {
   public scope: FormControl<string>;
   public target: FormControl<string>;
   public label: FormControl<string>;
+  public filteredLabel: FormControl<string>;
   public form: FormGroup;
 
   constructor() {
@@ -138,11 +140,16 @@ export class TaxoStoreNodeMappings {
       nonNullable: true,
       validators: Validators.maxLength(500),
     });
+    this.filteredLabel = this._fb.control<string>('', {
+      nonNullable: true,
+      validators: Validators.maxLength(500),
+    });
     this.form = this._fb.group(
       {
         scope: this.scope,
         target: this.target,
         label: this.label,
+        filteredLabel: this.filteredLabel,
       },
       { validators: (group) => this.validateUnique(group) },
     );
@@ -182,6 +189,7 @@ export class TaxoStoreNodeMappings {
       scope: mapping.scope,
       target: mapping.target,
       label: mapping.label ?? '',
+      filteredLabel: mapping.filteredLabel ?? '',
     });
   }
 
@@ -206,10 +214,13 @@ export class TaxoStoreNodeMappings {
     const index = this.editedIndex();
     if (index === null || this.form.invalid) return;
 
+    // as for nodes, when not set the filtered label defaults to the label
+    const label = this.label.value.trim();
     const mapping: TaxoStoreNodeMapping = {
       scope: this.scope.value.trim(),
       target: this.target.value.trim(),
-      label: this.label.value.trim() || undefined,
+      label: label || undefined,
+      filteredLabel: this.filteredLabel.value.trim() || label || undefined,
     };
     this.mappings.update((mappings) =>
       index === -1 ? [...mappings, mapping] : mappings.map((m, i) => (i === index ? mapping : m)),
@@ -230,6 +241,8 @@ export class TaxoStoreNodeMappings {
     this.scope.setValue(service?.id || event.config.name);
     this.target.setValue(target);
     this.label.setValue(toText(event.itemLabel) || toText(service?.getName(event.item)));
+    // the filtered label of the previous label no longer applies
+    this.filteredLabel.setValue('');
     this.form.markAsDirty();
   }
 }

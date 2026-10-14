@@ -151,6 +151,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
           treeId: this._treeId,
           isRoot: true,
           filteredLabel: filter.label,
+          filteredMappingLabel: filter.label,
           matchDescendants: true,
           flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
           includePosition: true,
@@ -193,6 +194,7 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
 
     if (filter.label) {
       apiFilter.filteredLabel = filter.label;
+      apiFilter.filteredMappingLabel = filter.label;
       apiFilter.matchDescendants = true;
     }
 

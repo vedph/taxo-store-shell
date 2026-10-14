@@ -143,13 +143,37 @@ describe('TaxoStoreNodeMappings', () => {
     expect(component.scope.value).toBe('viaf');
     expect(component.target.value).toBe('100');
     expect(component.label.value).toBe('Dante');
+    expect(component.filteredLabel.value).toBe('');
     // the edited mapping is not a duplicate of itself
     expect(component.form.valid).toBe(true);
 
     component.label.setValue('Dante Alighieri');
     component.saveMapping();
-    expect(changes).toEqual([[{ ...viaf, label: 'Dante Alighieri' }, web]]);
+    // the filtered label defaults to the label
+    expect(changes).toEqual([
+      [{ ...viaf, label: 'Dante Alighieri', filteredLabel: 'Dante Alighieri' }, web],
+    ]);
     expect(component.editing()).toBe(false);
+  });
+
+  it('should edit a filtered label', async () => {
+    await setup([{ ...viaf, label: 'Dantè', filteredLabel: 'dante' }]);
+    component.editMapping(0);
+    expect(component.filteredLabel.value).toBe('dante');
+
+    component.filteredLabel.setValue(' dante alighieri ');
+    component.saveMapping();
+    expect(changes).toEqual([[{ ...viaf, label: 'Dantè', filteredLabel: 'dante alighieri' }]]);
+  });
+
+  it('should show the filtered label field', async () => {
+    await setup([viaf]);
+    component.editMapping(0);
+    await fixture.whenStable();
+    const labels = Array.from(el().querySelectorAll('form mat-label')).map((l) =>
+      l.textContent?.trim(),
+    );
+    expect(labels).toContain('filtered label (optional)');
   });
 
   it('should load a mapping without label', async () => {
@@ -209,12 +233,15 @@ describe('TaxoStoreNodeMappings', () => {
     component.scope.setValue('s'.repeat(101));
     component.target.setValue('t'.repeat(501));
     component.label.setValue('l'.repeat(501));
+    component.filteredLabel.setValue('f'.repeat(501));
     expect(component.scope.hasError('maxlength')).toBe(true);
     expect(component.target.hasError('maxlength')).toBe(true);
     expect(component.label.hasError('maxlength')).toBe(true);
+    expect(component.filteredLabel.hasError('maxlength')).toBe(true);
     component.scope.setValue('s'.repeat(100));
     component.target.setValue('t'.repeat(500));
     component.label.setValue('l'.repeat(500));
+    component.filteredLabel.setValue('f'.repeat(500));
     expect(component.form.valid).toBe(true);
   });
 
@@ -264,10 +291,13 @@ describe('TaxoStoreNodeMappings', () => {
   it('should fill the mapping from a picked lookup item', async () => {
     await setup([], [config]);
     component.addMapping();
+    component.filteredLabel.setValue('old');
     component.onLookupItemChange(lookupEvent({ id: 'x1', name: 'Name' }, 'x1', 'Label'));
     expect(component.scope.value).toBe('fake');
     expect(component.target.value).toBe('x1');
     expect(component.label.value).toBe('Label');
+    // the filtered label is reset, so that it defaults to the new label
+    expect(component.filteredLabel.value).toBe('');
     expect(component.form.dirty).toBe(true);
     expect(component.form.valid).toBe(true);
   });

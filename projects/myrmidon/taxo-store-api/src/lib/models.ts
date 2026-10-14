@@ -58,6 +58,12 @@ export interface TaxoStoreNodeMapping {
    * An optional human-friendly label for the target. Max 500 characters.
    */
   label?: string;
+  /**
+   * The optional filtered version of label, used for searching (e.g. when
+   * the label is an alias of the node's label). When not set, the server
+   * falls back to label. Max 500 characters.
+   */
+  filteredLabel?: string;
 }
 
 /**

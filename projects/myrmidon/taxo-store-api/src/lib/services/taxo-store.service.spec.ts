@@ -236,6 +236,7 @@ describe('TaxoStoreService', () => {
         parentKey: 'pk',
         ancestorKey: 'a.b',
         filteredLabel: 'lab',
+        filteredMappingLabel: 'mlab',
         flags: 'ab',
         flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
         isLeaf: false,
@@ -256,6 +257,7 @@ describe('TaxoStoreService', () => {
     expect(params.get('parentKey')).toBe('pk');
     expect(params.getAll('ancestorKey')).toEqual(['a.b']);
     expect(params.get('filteredLabel')).toBe('lab');
+    expect(params.get('filteredMappingLabel')).toBe('mlab');
     expect(params.get('flags')).toBe('ab');
     expect(params.get('flagMatchMode')).toBe('all');
     expect(params.get('isLeaf')).toBe('false');

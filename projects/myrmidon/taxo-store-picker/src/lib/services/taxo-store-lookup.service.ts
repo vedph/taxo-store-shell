@@ -46,7 +46,8 @@ export interface TaxoStoreLookupOptions {
 }
 
 /**
- * Service for looking up tree store nodes by their filtered label.
+ * Service for looking up tree store nodes by their filtered label, or by
+ * the filtered label of any of their mappings (e.g. aliases).
  * Implements RefLookupService for use with RefLookupComponent.
  */
 @Injectable({
@@ -62,7 +63,8 @@ export class TaxoStoreLookupService implements RefLookupService {
   public readonly id = 'taxostore';
 
   /**
-   * Lookup nodes by their filtered label.
+   * Lookup nodes by their filtered label, or by the filtered label of any of
+   * their mappings: a node matches when either of them matches.
    * @param filter The lookup filter containing the search text and tree ID.
    * @param options Optional filtering options (parentKey, ancestorKey, flags,
    * flagMatchMode).
@@ -83,6 +85,7 @@ export class TaxoStoreLookupService implements RefLookupService {
       pageSize: filter.limit || 10,
       treeId: filter.treeId,
       filteredLabel: filter.text,
+      filteredMappingLabel: filter.text,
       flagMatchMode: options?.flagMatchMode ?? TaxoStoreNodeFlagMatchMode.Any,
     };
 

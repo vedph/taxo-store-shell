@@ -90,6 +90,7 @@ describe('TaxoStorePagedListService', () => {
       treeId: 't',
       isRoot: true,
       filteredLabel: 'a',
+      filteredMappingLabel: 'a',
       flags: undefined,
       flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
     });
@@ -106,6 +107,7 @@ describe('TaxoStorePagedListService', () => {
       treeId: 't',
       isRoot: true,
       filteredLabel: undefined,
+      filteredMappingLabel: undefined,
       flags: 'x',
       flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
     });

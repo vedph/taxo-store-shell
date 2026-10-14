@@ -49,7 +49,18 @@ export interface TaxoStoreNodeFilter {
    * with matchDescendants.
    */
   ancestorKey?: string;
+  /**
+   * Any part of the node's filtered label. When filteredMappingLabel is
+   * also set, the two are combined with OR.
+   */
   filteredLabel?: string;
+  /**
+   * Any part of the filtered label of any of the node's mappings. When
+   * filteredLabel is also set, a node matches if either its own filtered
+   * label or the filtered label of any of its mappings matches. This is
+   * used to find nodes also via their aliases stored as mappings.
+   */
+  filteredMappingLabel?: string;
   flags?: string;
   flagMatchMode: TaxoStoreNodeFlagMatchMode;
   isLeaf?: boolean;
@@ -63,8 +74,9 @@ export interface TaxoStoreNodeFilter {
    */
   isRoot?: boolean;
   /**
-   * When true and filteredLabel is set, a node is included if it directly
-   * matches the label OR if any of its descendants match. Uses a
+   * When true and filteredLabel and/or filteredMappingLabel are set, a node
+   * is included if it directly matches the label(s) OR if any of its
+   * descendants match. Uses a
    * reverse-recursive SQL CTE on the server side.
    */
   matchDescendants?: boolean;
@@ -243,6 +255,9 @@ export class TaxoStoreService {
     }
     if (filter.filteredLabel) {
       params.filteredLabel = filter.filteredLabel;
+    }
+    if (filter.filteredMappingLabel) {
+      params.filteredMappingLabel = filter.filteredMappingLabel;
     }
     if (filter.flags) {
       params.flags = filter.flags;

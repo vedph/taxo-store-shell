@@ -16,7 +16,7 @@ There are just two basic entities in the store:
   - a human-friendly label string and its searchable (filtered) counterpart.
   - a set of flags where each character represents a boolean attribute.
   - an optional note.
-  - any number of optional **mappings** to equivalent entities in external resources (e.g. authority files). Each mapping has a `scope` (the resource the target belongs to, e.g. `viaf`), a `target` (the ID of the entity in that resource, e.g. a VIAF ID), and an optional human-friendly `label`. The pair scope + target is unique within a node.
+  - any number of optional **mappings** to equivalent entities in external resources (e.g. authority files). Each mapping has a `scope` (the resource the target belongs to, e.g. `viaf`), a `target` (the ID of the entity in that resource, e.g. a VIAF ID), an optional human-friendly `label`, and its optional searchable counterpart (`filteredLabel`). The pair scope + target is unique within a node. Mapping labels can also be used to store aliases of the node's label: lookup finds nodes either via their own label or via any of their mapping labels.
 
 > The project internally uses numeric **identifiers** for internal operations with nodes, and human-friendly string keys for external references (e.g., API calls). This allows for efficient database operations while maintaining usability in external interfaces. Trees have a unique string key (ID) that can be used to reference them externally, while nodes have a unique string key within their respective tree and internally just use a numeric ID, which is more compact and efficient. So, a node key is granted to be unique only within its tree, not globally. If you want to have a globally unique node key (besides its numeric ID, which is internal to the database), you need to prefix it with the tree key followed by some separator, like a slash or a dot.
 
@@ -46,13 +46,13 @@ Models:
 
 - `TaxoStoreTree`: `id`, `name`, `note`, `flat`.
 - `TaxoStoreNode`: `id`, `parentId`, `treeId`, `key`, `label`, `filteredLabel`, `flags`, `note`, `mappings`, plus `x`, `y` and `hasChildren` when position data is requested.
-- `TaxoStoreNodeMapping`: `scope`, `target`, `label`.
+- `TaxoStoreNodeMapping`: `scope`, `target`, `label`, `filteredLabel`.
 
 Node **mappings** are fetched only on request, to keep bulk queries fast, and are saved with their node:
 
 - when reading, all the methods returning nodes (`getNode`, `getNodeFromKey`, `getNodes`, `getRootNodes`, `getChildNodes`, `getDescendantNodes`, `getAncestorNodes`) have an `includeMappings` option, false by default. When mappings are not requested, `mappings` is null or undefined.
 - when saving a node with `addNode`, an array of `mappings` (even when empty) replaces all the mappings of that node, while null or undefined `mappings` leave them untouched. So, never save an empty array for a node whose mappings you did not load, or you will remove them.
-- `TaxoStoreNodeFilter` has `mappingScope` and `mappingTarget` to find nodes from their mappings (both are exact matches).
+- `TaxoStoreNodeFilter` has `mappingScope` and `mappingTarget` to find nodes from their mappings (both are exact matches), and `filteredMappingLabel` to match any part of the filtered label of any of their mappings. When both `filteredLabel` and `filteredMappingLabel` are set, they are combined with OR: a node matches when either its own filtered label or that of any of its mappings matches.
 
 ### TaxoStore Editor
 
@@ -80,7 +80,7 @@ The view depends on the `flat` property of the tree, which the editor gets from 
 - a **flat tree** is displayed as a paged list of nodes, each with its key and label. The `hideLoc` and `hideFilter` inputs do not apply to this view.
 - any other tree is displayed as a paged tree, where each node can be expanded to browse its children.
 
-In both views, nodes are sorted by their key, and can be filtered by label and flags.
+In both views, nodes are sorted by their key, and can be filtered by label and flags. The label filter matches both the filtered label of nodes and the filtered labels of their mappings (e.g. aliases).
 
 Editing is done via a `TaxoStoreService` instance, which sends requests to a backend API and then fetches the updated nodes back to refresh the view. Commands are:
 
@@ -114,13 +114,14 @@ The dialog gets a `TaxoStoreNodeEditorDialogData` object (`treeId`, and either t
 
 Editor for the mappings of a node. It shows a button to add a mapping, and a table of the current mappings with their scope, target and label. Each mapping has buttons to edit it, delete it, and open its target in a new browser tab, when the target is a web address (starting with `http://` or `https://`).
 
-When adding or editing a mapping, an editor expands below the table, where you can type scope, target and label. Scope and target are required, and their pair must be unique within the node.
+When adding or editing a mapping, an editor expands below the table, where you can type scope, target, label and filtered label. Scope and target are required, and their pair must be unique within the node. The filtered label is the searchable form of the label: when empty, it defaults to the label, as for nodes.
 
 If any **lookup providers** are configured, the editor also shows a [lookup set](https://github.com/vedph/cadmus-bricks-shell-v3/blob/master/projects/myrmidon/cadmus-refs-lookup/README.md), which fills all the fields at once. When you pick an item from a lookup:
 
 - scope is set to the ID of the lookup provider used (the `id` of its service, e.g. `viaf`).
 - target is set to the ID of the picked item (from the `itemIdGetter` of the lookup configuration).
 - label is set to the name of the picked item (from the `itemLabelGetter` of the lookup configuration, or else from the `getName` function of the lookup service).
+- filtered label is cleared, so that it defaults to the new label.
 
 You can still change these values before saving the mapping.
 
@@ -180,3 +181,5 @@ providers: [
   - `pageSize`: the page size for loading nodes. Default is 20.
 - 🔥 output:
   - `nodePick` (`TaxoStoreNode`): emitted when a node is picked by the user.
+
+The lookup (`TaxoStoreLookupService`) matches the typed text against both the filtered label of nodes and the filtered labels of their mappings, so that a node can be found also via its aliases.

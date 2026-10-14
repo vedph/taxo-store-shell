@@ -87,6 +87,7 @@ export class TaxoStorePagedListService implements PagedListStoreService<
         treeId: this._treeId,
         isRoot: true,
         filteredLabel: filter.label || undefined,
+        filteredMappingLabel: filter.label || undefined,
         flags: filter.flags || undefined,
         flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
       })

@@ -107,6 +107,7 @@ describe('TaxoStorePagedTreeService', () => {
       treeId: 't',
       isRoot: true,
       filteredLabel: 'b',
+      filteredMappingLabel: 'b',
       matchDescendants: true,
       flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
       includePosition: true,
@@ -145,6 +146,7 @@ describe('TaxoStorePagedTreeService', () => {
       flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
       includePosition: true,
       filteredLabel: 'b',
+      filteredMappingLabel: 'b',
       matchDescendants: true,
       flags: 'y',
     });
