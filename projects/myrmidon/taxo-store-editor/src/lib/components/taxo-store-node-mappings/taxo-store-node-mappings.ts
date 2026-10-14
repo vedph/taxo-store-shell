@@ -30,7 +30,7 @@ import {
   RefLookupSetComponent,
   RefLookupSetEvent,
 } from '@myrmidon/cadmus-refs-lookup';
-import { TaxoStoreNodeMapping } from '@myrmidon/taxo-store-api';
+import { TaxoStoreNodeMapping, filterTaxoLabel } from '@myrmidon/taxo-store-api';
 
 /**
  * A mapping as displayed in the mappings table.
@@ -53,7 +53,7 @@ function toText(value: unknown): string {
  * Editor for the mappings of a taxo store node to external resources.
  * Mappings are listed in a table; each mapping can be added or edited
  * manually, by typing its scope, target, label and filtered label (which
- * defaults to the label when empty), or via lookup, when any
+ * is built from the label when empty), or via lookup, when any
  * lookup providers are configured. Picking an item from a lookup sets the
  * scope to the ID of the lookup provider, the target to the ID of the item,
  * and the label to the name of the item.
@@ -214,13 +214,13 @@ export class TaxoStoreNodeMappings {
     const index = this.editedIndex();
     if (index === null || this.form.invalid) return;
 
-    // as for nodes, when not set the filtered label defaults to the label
+    // as for nodes, when not set the filtered label is built from label
     const label = this.label.value.trim();
     const mapping: TaxoStoreNodeMapping = {
       scope: this.scope.value.trim(),
       target: this.target.value.trim(),
       label: label || undefined,
-      filteredLabel: this.filteredLabel.value.trim() || label || undefined,
+      filteredLabel: this.filteredLabel.value.trim() || filterTaxoLabel(label) || undefined,
     };
     this.mappings.update((mappings) =>
       index === -1 ? [...mappings, mapping] : mappings.map((m, i) => (i === index ? mapping : m)),

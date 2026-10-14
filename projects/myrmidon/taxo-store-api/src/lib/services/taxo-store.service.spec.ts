@@ -235,8 +235,8 @@ describe('TaxoStoreService', () => {
         key: 'k',
         parentKey: 'pk',
         ancestorKey: 'a.b',
-        filteredLabel: 'lab',
-        filteredMappingLabel: 'mlab',
+        filteredLabel: 'Làb',
+        filteredMappingLabel: ' MLab! ',
         flags: 'ab',
         flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
         isLeaf: false,
@@ -267,6 +267,23 @@ describe('TaxoStoreService', () => {
     expect(params.get('mappingScope')).toBe('viaf');
     expect(params.get('mappingTarget')).toBe('100');
     expect(params.get('includeMappings')).toBe('true');
+    req.flush(makePage([]));
+    await p;
+  });
+
+  it('getNodes should omit labels with nothing left after filtering', async () => {
+    const p = firstValueFrom(
+      service.getNodes({
+        pageNumber: 1,
+        pageSize: 10,
+        filteredLabel: '123',
+        filteredMappingLabel: ' ! ',
+        flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+      }),
+    );
+    const req = http.expectOne((r) => r.url === `${URL}nodes`);
+    expect(req.request.params.has('filteredLabel')).toBe(false);
+    expect(req.request.params.has('filteredMappingLabel')).toBe(false);
     req.flush(makePage([]));
     await p;
   });

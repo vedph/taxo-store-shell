@@ -122,7 +122,7 @@
         <mat-form-field>
           <mat-label>filtered label (optional)</mat-label>
           <input matInput [formControl]="filteredLabel" />
-          <mat-hint>searchable label; defaults to label</mat-hint>
+          <mat-hint>searchable label; built from label when empty</mat-hint>
           @if (filteredLabel.hasError('maxlength')) {
             <mat-error>Filtered label is too long</mat-error>
           }

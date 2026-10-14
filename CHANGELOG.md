@@ -4,10 +4,13 @@
   - `@myrmidon/taxo-store-api` (1.2.0):
     - `TaxoStoreNodeMapping` has a new `filteredLabel` property.
     - `TaxoStoreNodeFilter` has a new `filteredMappingLabel` property, matching any part of the filtered label of any mapping of the node. When `filteredLabel` is also set, the two are combined with OR.
+    - added `filterTaxoLabel`, the equivalent of the server-side `TaxoTreeImporter.FilterLabel` (remove diacritics, lowercase, keep only letters, whitespace and `-_/.,:;`).
+    - `getNodes` filters `filteredLabel` and `filteredMappingLabel` with `filterTaxoLabel` before sending them, so that e.g. typing `Angiò` finds `angio`. A label left empty by filtering is not sent.
   - `@myrmidon/taxo-store-editor` (1.2.0):
-    - `TaxoStoreNodeMappings` has a new filtered label field. When empty, it defaults to the label, as for nodes; picking an item from a lookup clears it.
+    - `TaxoStoreNodeMappings` has a new filtered label field. When empty, it is built from the label with `filterTaxoLabel`; picking an item from a lookup clears it.
+    - `TaxoStoreNodeEditorDialog`: when the filtered label is empty, it is now built from the label with `filterTaxoLabel` (it was the label as it is), consistently with the server-side importer and with the filtering applied to searched text.
     - the label filter of `TaxoStorePagedTreeService` and `TaxoStorePagedListService` (used by `TaxoStoreEditor` for its tree and list views) matches both the filtered label of nodes and the filtered labels of their mappings.
-  - `@myrmidon/taxo-store-picker` (1.1.0): `TaxoStoreLookupService` looks up nodes by both their filtered label and the filtered labels of their mappings (e.g. aliases).
+  - `@myrmidon/taxo-store-picker` (1.1.0): `TaxoStoreLookupService` looks up nodes by both their filtered label and the filtered labels of their mappings (e.g. aliases). Text with no searchable characters (e.g. just digits) returns no results.
 - 2026-10-13: flat trees and node mappings (requires TaxoStore API 1.0.0):
   - `@myrmidon/taxo-store-api` (1.1.0):
     - `TaxoStoreTree` has a new `flat` property, true when all the nodes of the tree are root nodes.

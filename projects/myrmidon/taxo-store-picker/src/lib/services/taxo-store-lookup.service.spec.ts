@@ -55,6 +55,13 @@ describe('TaxoStoreLookupService', () => {
     expect(api.getNodes).not.toHaveBeenCalled();
   });
 
+  it('lookup should return empty when text has no searchable characters', async () => {
+    expect(
+      await firstValueFrom(service.lookup({ treeId: 'animals', text: ' 123! ', limit: 0 })),
+    ).toEqual([]);
+    expect(api.getNodes).not.toHaveBeenCalled();
+  });
+
   it('lookup should query by node and mapping label with default limit and match mode', async () => {
     const result = await firstValueFrom(
       service.lookup({ treeId: 'animals', text: 'bi', limit: 0 }),

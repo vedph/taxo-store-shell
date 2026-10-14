@@ -22,7 +22,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { TaxoStoreNode, TaxoStoreNodeMapping } from '@myrmidon/taxo-store-api';
+import { TaxoStoreNode, TaxoStoreNodeMapping, filterTaxoLabel } from '@myrmidon/taxo-store-api';
 
 import { TaxoStoreNodeMappings } from '../taxo-store-node-mappings/taxo-store-node-mappings';
 
@@ -164,7 +164,8 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
       parentId: this.data.node?.parentId ?? this.data.parentId,
       key: this.key.value.trim(),
       label: this.label.value.trim(),
-      filteredLabel: this.filteredLabel.value.trim() || this.label.value.trim(),
+      // when not set, the filtered label is built from label like the server does
+      filteredLabel: this.filteredLabel.value.trim() || filterTaxoLabel(this.label.value),
       flags: this.flags.value.trim() || undefined,
       note: this.note.value.trim() || undefined,
       mappings: saveMappings ? this.mappings() : undefined,

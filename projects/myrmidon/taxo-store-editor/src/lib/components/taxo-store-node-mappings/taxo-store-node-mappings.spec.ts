@@ -149,9 +149,9 @@ describe('TaxoStoreNodeMappings', () => {
 
     component.label.setValue('Dante Alighieri');
     component.saveMapping();
-    // the filtered label defaults to the label
+    // the filtered label is built from the label
     expect(changes).toEqual([
-      [{ ...viaf, label: 'Dante Alighieri', filteredLabel: 'Dante Alighieri' }, web],
+      [{ ...viaf, label: 'Dante Alighieri', filteredLabel: 'dante alighieri' }, web],
     ]);
     expect(component.editing()).toBe(false);
   });

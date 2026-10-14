@@ -123,7 +123,7 @@ describe('TaxoStoreNodeEditorDialog', () => {
         parentId: 3,
         key: 'new',
         label: 'New Label',
-        filteredLabel: 'New Label',
+        filteredLabel: 'new label',
         flags: undefined,
         note: undefined,
         mappings: [],

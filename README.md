@@ -53,6 +53,7 @@ Node **mappings** are fetched only on request, to keep bulk queries fast, and ar
 - when reading, all the methods returning nodes (`getNode`, `getNodeFromKey`, `getNodes`, `getRootNodes`, `getChildNodes`, `getDescendantNodes`, `getAncestorNodes`) have an `includeMappings` option, false by default. When mappings are not requested, `mappings` is null or undefined.
 - when saving a node with `addNode`, an array of `mappings` (even when empty) replaces all the mappings of that node, while null or undefined `mappings` leave them untouched. So, never save an empty array for a node whose mappings you did not load, or you will remove them.
 - `TaxoStoreNodeFilter` has `mappingScope` and `mappingTarget` to find nodes from their mappings (both are exact matches), and `filteredMappingLabel` to match any part of the filtered label of any of their mappings. When both `filteredLabel` and `filteredMappingLabel` are set, they are combined with OR: a node matches when either its own filtered label or that of any of its mappings matches.
+- `filterTaxoLabel` filters a label like the server-side importer does when building filtered labels: it removes diacritics, lowercases, turns any whitespace into a space, and keeps only letters and `-_/.,:;`, trimming the result (e.g. `Federico II d'Angiò` becomes `federico ii dangio`). `getNodes` applies it to `filteredLabel` and `filteredMappingLabel` before sending them, so that any typed text can be compared with the stored filtered labels; when nothing is left after filtering (e.g. just digits), that label filter is not applied.
 
 ### TaxoStore Editor
 
@@ -114,14 +115,14 @@ The dialog gets a `TaxoStoreNodeEditorDialogData` object (`treeId`, and either t
 
 Editor for the mappings of a node. It shows a button to add a mapping, and a table of the current mappings with their scope, target and label. Each mapping has buttons to edit it, delete it, and open its target in a new browser tab, when the target is a web address (starting with `http://` or `https://`).
 
-When adding or editing a mapping, an editor expands below the table, where you can type scope, target, label and filtered label. Scope and target are required, and their pair must be unique within the node. The filtered label is the searchable form of the label: when empty, it defaults to the label, as for nodes.
+When adding or editing a mapping, an editor expands below the table, where you can type scope, target, label and filtered label. Scope and target are required, and their pair must be unique within the node. The filtered label is the searchable form of the label: when empty, it is built from the label with `filterTaxoLabel`, as for nodes.
 
 If any **lookup providers** are configured, the editor also shows a [lookup set](https://github.com/vedph/cadmus-bricks-shell-v3/blob/master/projects/myrmidon/cadmus-refs-lookup/README.md), which fills all the fields at once. When you pick an item from a lookup:
 
 - scope is set to the ID of the lookup provider used (the `id` of its service, e.g. `viaf`).
 - target is set to the ID of the picked item (from the `itemIdGetter` of the lookup configuration).
 - label is set to the name of the picked item (from the `itemLabelGetter` of the lookup configuration, or else from the `getName` function of the lookup service).
-- filtered label is cleared, so that it defaults to the new label.
+- filtered label is cleared, so that it is built from the new label.
 
 You can still change these values before saving the mapping.
 

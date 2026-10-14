@@ -5,6 +5,7 @@ import { retry, catchError } from 'rxjs/operators';
 
 import { EnvService, ErrorService, DataPage, PagingOptions } from '@myrmidon/ngx-tools';
 
+import { filterTaxoLabel } from '../label-filter';
 import { TaxoStoreTree, TaxoStoreNode, TaxoNodePathStep } from '../models';
 
 /**
@@ -51,7 +52,8 @@ export interface TaxoStoreNodeFilter {
   ancestorKey?: string;
   /**
    * Any part of the node's filtered label. When filteredMappingLabel is
-   * also set, the two are combined with OR.
+   * also set, the two are combined with OR. This is filtered with
+   * filterTaxoLabel before being sent, so it can be any text.
    */
   filteredLabel?: string;
   /**
@@ -59,6 +61,8 @@ export interface TaxoStoreNodeFilter {
    * filteredLabel is also set, a node matches if either its own filtered
    * label or the filtered label of any of its mappings matches. This is
    * used to find nodes also via their aliases stored as mappings.
+   * This is filtered with filterTaxoLabel before being sent, so it can be
+   * any text.
    */
   filteredMappingLabel?: string;
   flags?: string;
@@ -253,11 +257,15 @@ export class TaxoStoreService {
     if (filter.ancestorKey) {
       params.ancestorKey = filter.ancestorKey;
     }
-    if (filter.filteredLabel) {
-      params.filteredLabel = filter.filteredLabel;
+    // labels are filtered like the server does when storing them; when
+    // nothing is left after filtering, the label filter is not applied
+    const filteredLabel = filterTaxoLabel(filter.filteredLabel);
+    if (filteredLabel) {
+      params.filteredLabel = filteredLabel;
     }
-    if (filter.filteredMappingLabel) {
-      params.filteredMappingLabel = filter.filteredMappingLabel;
+    const filteredMappingLabel = filterTaxoLabel(filter.filteredMappingLabel);
+    if (filteredMappingLabel) {
+      params.filteredMappingLabel = filteredMappingLabel;
     }
     if (filter.flags) {
       params.flags = filter.flags;

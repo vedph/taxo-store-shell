@@ -8,6 +8,7 @@ import {
   TaxoStoreNodeFilter,
   TaxoStoreNodeFlagMatchMode,
   TaxoStoreService,
+  filterTaxoLabel,
 } from '@myrmidon/taxo-store-api';
 
 /**
@@ -74,8 +75,10 @@ export class TaxoStoreLookupService implements RefLookupService {
     filter: TaxoStoreLookupFilter,
     options?: TaxoStoreLookupOptions,
   ): Observable<TaxoStoreNode[]> {
-    // If no tree ID or search text, return empty
-    if (!filter.treeId || !filter.text) {
+    // If no tree ID or search text, return empty; the text is filtered by
+    // the API client like node and mapping labels, so it is empty also
+    // when it has no searchable characters (e.g. just digits)
+    if (!filter.treeId || !filterTaxoLabel(filter.text)) {
       return of([]);
     }
 
