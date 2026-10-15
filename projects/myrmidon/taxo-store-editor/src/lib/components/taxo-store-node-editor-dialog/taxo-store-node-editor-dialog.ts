@@ -3,17 +3,10 @@ import {
   Component,
   computed,
   inject,
-  OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { form, FormField, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -59,6 +52,27 @@ export interface TaxoStoreNodeEditorDialogResult {
 }
 
 /**
+ * The editable values of the node form.
+ */
+interface NodeDraft {
+  key: string;
+  label: string;
+  filteredLabel: string;
+  flags: string;
+  note: string;
+}
+
+function toDraft(node: TaxoStoreNode | undefined): NodeDraft {
+  return {
+    key: node?.key ?? '',
+    label: node?.label ?? '',
+    filteredLabel: node?.filteredLabel ?? '',
+    flags: node?.flags ?? '',
+    note: node?.note ?? '',
+  };
+}
+
+/**
  * Dialog component for editing or creating a taxo store node. The dialog
  * has two tabs: general, with the node's own data, and mappings, with the
  * mappings of the node to external resources.
@@ -67,7 +81,7 @@ export interface TaxoStoreNodeEditorDialogResult {
   selector: 'ts-taxo-store-node-editor-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule,
+    FormField,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -80,64 +94,32 @@ export interface TaxoStoreNodeEditorDialogResult {
   templateUrl: './taxo-store-node-editor-dialog.html',
   styleUrls: ['./taxo-store-node-editor-dialog.scss'],
 })
-export class TaxoStoreNodeEditorDialog implements OnInit {
-  private readonly _fb = inject(FormBuilder);
+export class TaxoStoreNodeEditorDialog {
   private readonly _dialogRef = inject(MatDialogRef<TaxoStoreNodeEditorDialog>);
 
   public readonly data: TaxoStoreNodeEditorDialogData = inject(MAT_DIALOG_DATA);
 
-  public key: FormControl<string>;
-  public label: FormControl<string>;
-  public filteredLabel: FormControl<string>;
-  public flags: FormControl<string>;
-  public note: FormControl<string>;
-  public form: FormGroup;
+  public readonly isNew = !this.data.node;
 
-  public isNew = false;
+  // the dialog data never change, so the draft is just loaded from them
+  private readonly _draft = signal(toDraft(this.data.node));
+
+  public readonly form = form(this._draft, (p) => {
+    required(p.key);
+    required(p.label);
+  });
 
   private readonly _mappingsEditor = viewChild(TaxoStoreNodeMappings);
   private _mappingsChanged = false;
 
   public readonly selectedTab = signal(0);
-  public readonly mappings = signal<TaxoStoreNodeMapping[]>([]);
+  public readonly mappings = signal<TaxoStoreNodeMapping[]>(this.data.node?.mappings ?? []);
 
   /**
    * True while a mapping is being added or edited in the mappings tab.
    * The node can't be saved until that mapping is saved or cancelled.
    */
   public readonly mappingEditing = computed(() => this._mappingsEditor()?.editing() ?? false);
-
-  constructor() {
-    this.key = this._fb.control<string>('', { nonNullable: true, validators: Validators.required });
-    this.label = this._fb.control<string>('', {
-      nonNullable: true,
-      validators: Validators.required,
-    });
-    this.filteredLabel = this._fb.control<string>('', { nonNullable: true });
-    this.flags = this._fb.control<string>('', { nonNullable: true });
-    this.note = this._fb.control<string>('', { nonNullable: true });
-    this.form = this._fb.group({
-      key: this.key,
-      label: this.label,
-      filteredLabel: this.filteredLabel,
-      flags: this.flags,
-      note: this.note,
-    });
-  }
-
-  public ngOnInit(): void {
-    this.isNew = !this.data.node;
-
-    if (this.data.node) {
-      this.key.setValue(this.data.node.key);
-      this.label.setValue(this.data.node.label);
-      this.filteredLabel.setValue(this.data.node.filteredLabel);
-      this.flags.setValue(this.data.node.flags ?? '');
-      this.note.setValue(this.data.node.note ?? '');
-      this.mappings.set(this.data.node.mappings ?? []);
-      this.form.markAsPristine();
-    }
-  }
 
   public onMappingsChange(mappings: TaxoStoreNodeMapping[]): void {
     this.mappings.set(mappings);
@@ -149,7 +131,7 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
   }
 
   public save(): void {
-    if (this.form.invalid || this.mappingEditing()) {
+    if (this.form().invalid() || this.mappingEditing()) {
       return;
     }
 
@@ -158,16 +140,17 @@ export class TaxoStoreNodeEditorDialog implements OnInit {
     const saveMappings =
       this.isNew || this._mappingsChanged || Array.isArray(this.data.node?.mappings);
 
+    const draft = this._draft();
     const node: TaxoStoreNode = {
       id: this.data.node?.id ?? 0,
       treeId: this.data.treeId,
       parentId: this.data.node?.parentId ?? this.data.parentId,
-      key: this.key.value.trim(),
-      label: this.label.value.trim(),
+      key: draft.key.trim(),
+      label: draft.label.trim(),
       // when not set, the filtered label is built from label like the server does
-      filteredLabel: this.filteredLabel.value.trim() || filterTaxoLabel(this.label.value),
-      flags: this.flags.value.trim() || undefined,
-      note: this.note.value.trim() || undefined,
+      filteredLabel: draft.filteredLabel.trim() || filterTaxoLabel(draft.label),
+      flags: draft.flags.trim() || undefined,
+      note: draft.note.trim() || undefined,
       mappings: saveMappings ? this.mappings() : undefined,
     };
 

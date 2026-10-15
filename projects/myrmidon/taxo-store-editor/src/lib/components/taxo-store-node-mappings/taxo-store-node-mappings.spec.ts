@@ -117,20 +117,20 @@ describe('TaxoStoreNodeMappings', () => {
     await fixture.whenStable();
     expect(component.editedIndex()).toBe(-1);
     expect(component.editorTitle()).toBe('New mapping');
-    expect(el().querySelector('form')).toBeTruthy();
-    expect(component.form.invalid).toBe(true);
+    expect(el().querySelector('.mapping-form')).toBeTruthy();
+    expect(component.form().invalid()).toBe(true);
 
-    component.scope.setValue(' geonames ');
-    component.target.setValue(' 42 ');
-    component.label.setValue('  ');
+    component.form.scope().value.set(' geonames ');
+    component.form.target().value.set(' 42 ');
+    component.form.label().value.set('  ');
     await fixture.whenStable();
-    el().querySelector<HTMLButtonElement>('form button[type=submit]')!.click();
+    el().querySelector<HTMLButtonElement>('.mapping-form .save-btn')!.click();
     await fixture.whenStable();
 
     expect(changes).toEqual([[viaf, { scope: 'geonames', target: '42', label: undefined }]]);
     expect(component.editing()).toBe(false);
     expect(rows().length).toBe(2);
-    expect(el().querySelector('form')).toBeNull();
+    expect(el().querySelector('.mapping-form')).toBeNull();
   });
 
   it('should edit a mapping', async () => {
@@ -140,14 +140,14 @@ describe('TaxoStoreNodeMappings', () => {
     expect(component.editedIndex()).toBe(0);
     expect(component.editorTitle()).toBe('Edit mapping');
     expect(rows()[0].classList).toContain('edited');
-    expect(component.scope.value).toBe('viaf');
-    expect(component.target.value).toBe('100');
-    expect(component.label.value).toBe('Dante');
-    expect(component.filteredLabel.value).toBe('');
+    expect(component.form.scope().value()).toBe('viaf');
+    expect(component.form.target().value()).toBe('100');
+    expect(component.form.label().value()).toBe('Dante');
+    expect(component.form.filteredLabel().value()).toBe('');
     // the edited mapping is not a duplicate of itself
-    expect(component.form.valid).toBe(true);
+    expect(component.form().valid()).toBe(true);
 
-    component.label.setValue('Dante Alighieri');
+    component.form.label().value.set('Dante Alighieri');
     component.saveMapping();
     // the filtered label is built from the label
     expect(changes).toEqual([
@@ -159,9 +159,9 @@ describe('TaxoStoreNodeMappings', () => {
   it('should edit a filtered label', async () => {
     await setup([{ ...viaf, label: 'Dantè', filteredLabel: 'dante' }]);
     component.editMapping(0);
-    expect(component.filteredLabel.value).toBe('dante');
+    expect(component.form.filteredLabel().value()).toBe('dante');
 
-    component.filteredLabel.setValue(' dante alighieri ');
+    component.form.filteredLabel().value.set(' dante alighieri ');
     component.saveMapping();
     expect(changes).toEqual([[{ ...viaf, label: 'Dantè', filteredLabel: 'dante alighieri' }]]);
   });
@@ -170,7 +170,7 @@ describe('TaxoStoreNodeMappings', () => {
     await setup([viaf]);
     component.editMapping(0);
     await fixture.whenStable();
-    const labels = Array.from(el().querySelectorAll('form mat-label')).map((l) =>
+    const labels = Array.from(el().querySelectorAll('.mapping-form mat-label')).map((l) =>
       l.textContent?.trim(),
     );
     expect(labels).toContain('filtered label (optional)');
@@ -179,7 +179,7 @@ describe('TaxoStoreNodeMappings', () => {
   it('should load a mapping without label', async () => {
     await setup([web]);
     component.editMapping(0);
-    expect(component.label.value).toBe('');
+    expect(component.form.label().value()).toBe('');
     // an index out of range is ignored
     component.cancelMapping();
     component.editMapping(9);
@@ -207,15 +207,15 @@ describe('TaxoStoreNodeMappings', () => {
   it('should cancel editing', async () => {
     await setup([viaf]);
     component.editMapping(0);
-    component.label.setValue('changed');
+    component.form.label().value.set('changed');
     await fixture.whenStable();
-    el().querySelector<HTMLButtonElement>('form button[type=button]')!.click();
+    el().querySelector<HTMLButtonElement>('.mapping-form .cancel-btn')!.click();
     await fixture.whenStable();
     expect(component.editing()).toBe(false);
     expect(changes).toEqual([]);
     // a new edit starts from the saved values
     component.editMapping(0);
-    expect(component.label.value).toBe('Dante');
+    expect(component.form.label().value()).toBe('Dante');
   });
 
   it('should not save when not editing or invalid', async () => {
@@ -230,38 +230,89 @@ describe('TaxoStoreNodeMappings', () => {
   it('should validate lengths', async () => {
     await setup();
     component.addMapping();
-    component.scope.setValue('s'.repeat(101));
-    component.target.setValue('t'.repeat(501));
-    component.label.setValue('l'.repeat(501));
-    component.filteredLabel.setValue('f'.repeat(501));
-    expect(component.scope.hasError('maxlength')).toBe(true);
-    expect(component.target.hasError('maxlength')).toBe(true);
-    expect(component.label.hasError('maxlength')).toBe(true);
-    expect(component.filteredLabel.hasError('maxlength')).toBe(true);
-    component.scope.setValue('s'.repeat(100));
-    component.target.setValue('t'.repeat(500));
-    component.label.setValue('l'.repeat(500));
-    component.filteredLabel.setValue('f'.repeat(500));
-    expect(component.form.valid).toBe(true);
+    component.form.scope().value.set('s'.repeat(101));
+    component.form.target().value.set('t'.repeat(501));
+    component.form.label().value.set('l'.repeat(501));
+    component.form.filteredLabel().value.set('f'.repeat(501));
+    expect(component.form.scope().getError('maxLength')).toBeTruthy();
+    expect(component.form.target().getError('maxLength')).toBeTruthy();
+    expect(component.form.label().getError('maxLength')).toBeTruthy();
+    expect(component.form.filteredLabel().getError('maxLength')).toBeTruthy();
+    component.form.scope().value.set('s'.repeat(100));
+    component.form.target().value.set('t'.repeat(500));
+    component.form.label().value.set('l'.repeat(500));
+    component.form.filteredLabel().value.set('f'.repeat(500));
+    expect(component.form().valid()).toBe(true);
+  });
+
+  it('should not render a form element', async () => {
+    await setup([viaf]);
+    component.addMapping();
+    await fixture.whenStable();
+    expect(el().querySelector('form')).toBeNull();
+    expect(
+      Array.from(el().querySelectorAll<HTMLButtonElement>('button')).every((b) => b.type === 'button'),
+    ).toBe(true);
+  });
+
+  it('should save on Enter', async () => {
+    await setup([]);
+    component.addMapping();
+    await fixture.whenStable();
+    component.form.scope().value.set('s');
+    component.form.target().value.set('t');
+    await fixture.whenStable();
+    const input = el().querySelectorAll<HTMLInputElement>('.mapping-form input')[1];
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await fixture.whenStable();
+    expect(changes).toEqual([[{ scope: 's', target: 't', label: undefined }]]);
+  });
+
+  it('should not save on Enter when invalid', async () => {
+    await setup([]);
+    component.addMapping();
+    await fixture.whenStable();
+    el()
+      .querySelector<HTMLInputElement>('.mapping-form input')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await fixture.whenStable();
+    expect(changes).toEqual([]);
+    expect(component.editing()).toBe(true);
+  });
+
+  it('should not limit input length natively, so that long text is reported', async () => {
+    // a native maxlength would make the browser truncate a pasted text silently
+    await setup([]);
+    component.addMapping();
+    await fixture.whenStable();
+    const inputs = Array.from(el().querySelectorAll<HTMLInputElement>('.mapping-form input'));
+    expect(inputs.length).toBe(4);
+    expect(inputs.map((i) => i.hasAttribute('maxlength'))).toEqual([false, false, false, false]);
+
+    component.form.target().value.set('t'.repeat(501));
+    component.form.target().markAsTouched();
+    await fixture.whenStable();
+    const errors = Array.from(el().querySelectorAll('mat-error')).map((e) => e.textContent?.trim());
+    expect(errors).toContain('Target is too long');
   });
 
   it('should reject a duplicate scope and target', async () => {
     await setup([viaf, web]);
     component.addMapping();
-    component.scope.setValue('viaf');
-    component.target.setValue(' 100 ');
+    component.form.scope().value.set('viaf');
+    component.form.target().value.set(' 100 ');
     await fixture.whenStable();
-    expect(component.form.hasError('duplicate')).toBe(true);
-    expect(el().querySelector('form > mat-error')?.textContent).toContain('already has a mapping');
-    expect(el().querySelector<HTMLButtonElement>('form button[type=submit]')!.disabled).toBe(true);
+    expect(component.form().getError('duplicate')).toBeTruthy();
+    expect(el().querySelector('.mapping-form > mat-error')?.textContent).toContain('already has a mapping');
+    expect(el().querySelector<HTMLButtonElement>('.mapping-form .save-btn')!.disabled).toBe(true);
     // same target in another scope is fine
-    component.scope.setValue('lc');
-    expect(component.form.valid).toBe(true);
+    component.form.scope().value.set('lc');
+    expect(component.form().valid()).toBe(true);
     // editing a mapping into another one is a duplicate too
     component.editMapping(1);
-    component.scope.setValue('viaf');
-    component.target.setValue('100');
-    expect(component.form.hasError('duplicate')).toBe(true);
+    component.form.scope().value.set('viaf');
+    component.form.target().value.set('100');
+    expect(component.form().getError('duplicate')).toBeTruthy();
   });
 
   it('should not show lookup when not configured', async () => {
@@ -291,15 +342,15 @@ describe('TaxoStoreNodeMappings', () => {
   it('should fill the mapping from a picked lookup item', async () => {
     await setup([], [config]);
     component.addMapping();
-    component.filteredLabel.setValue('old');
+    component.form.filteredLabel().value.set('old');
     component.onLookupItemChange(lookupEvent({ id: 'x1', name: 'Name' }, 'x1', 'Label'));
-    expect(component.scope.value).toBe('fake');
-    expect(component.target.value).toBe('x1');
-    expect(component.label.value).toBe('Label');
+    expect(component.form.scope().value()).toBe('fake');
+    expect(component.form.target().value()).toBe('x1');
+    expect(component.form.label().value()).toBe('Label');
     // the filtered label is reset, so that it defaults to the new label
-    expect(component.filteredLabel.value).toBe('');
-    expect(component.form.dirty).toBe(true);
-    expect(component.form.valid).toBe(true);
+    expect(component.form.filteredLabel().value()).toBe('');
+    expect(component.form().dirty()).toBe(true);
+    expect(component.form().valid()).toBe(true);
   });
 
   it('should get numeric IDs and missing labels from a picked lookup item', async () => {
@@ -308,8 +359,8 @@ describe('TaxoStoreNodeMappings', () => {
     // without getters, the lookup set returns the item itself as ID and label
     const item: FakeItem = { id: 7, name: 'Seven' };
     component.onLookupItemChange(lookupEvent(item, 7, item));
-    expect(component.target.value).toBe('7');
-    expect(component.label.value).toBe('Seven');
+    expect(component.form.target().value()).toBe('7');
+    expect(component.form.label().value()).toBe('Seven');
   });
 
   it('should use the configuration name as scope when it has no service', async () => {
@@ -317,20 +368,20 @@ describe('TaxoStoreNodeMappings', () => {
     await setup([], [config]);
     component.addMapping();
     component.onLookupItemChange(lookupEvent('abc', 'abc', undefined));
-    expect(component.scope.value).toBe('NoService');
-    expect(component.target.value).toBe('abc');
-    expect(component.label.value).toBe('');
+    expect(component.form.scope().value()).toBe('NoService');
+    expect(component.form.target().value()).toBe('abc');
+    expect(component.form.label().value()).toBe('');
   });
 
   it('should ignore a cleared lookup or an item without ID', async () => {
     await setup([], [config]);
     component.editMapping(0);
     component.addMapping();
-    component.scope.setValue('keep');
+    component.form.scope().value.set('keep');
     component.onLookupItemChange(lookupEvent(null, null, null));
     component.onLookupItemChange(lookupEvent(undefined, undefined, undefined));
     component.onLookupItemChange(lookupEvent({ id: 1, name: 'x' }, { id: 1 }, 'x'));
-    expect(component.scope.value).toBe('keep');
-    expect(component.target.value).toBe('');
+    expect(component.form.scope().value()).toBe('keep');
+    expect(component.form.target().value()).toBe('');
   });
 });

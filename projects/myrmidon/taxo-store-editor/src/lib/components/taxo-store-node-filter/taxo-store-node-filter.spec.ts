@@ -25,7 +25,7 @@ describe('TaxoStoreNodeFilter', () => {
     it('should not be wrapped', () => {
       expect(component.wrapped).toBe(false);
       expect(component.dialogRef).toBeNull();
-      const form = (fixture.nativeElement as HTMLElement).querySelector('form')!;
+      const form = (fixture.nativeElement as HTMLElement).querySelector('.filter')!;
       expect(form.classList.contains('wrapped')).toBe(false);
     });
 
@@ -39,31 +39,69 @@ describe('TaxoStoreNodeFilter', () => {
     it('should update form when filter input changes', async () => {
       fixture.componentRef.setInput('filter', { label: 'cat', flags: 'x' });
       await fixture.whenStable();
-      expect(component.label.value).toBe('cat');
-      expect(component.flags.value).toBe('x');
-      expect(component.form.pristine).toBe(true);
+      expect(component.form.label().value()).toBe('cat');
+      expect(component.form.flags().value()).toBe('x');
+      expect(component.form().dirty()).toBe(false);
 
       fixture.componentRef.setInput('filter', {});
       await fixture.whenStable();
-      expect(component.label.value).toBe('');
-      expect(component.flags.value).toBe('');
+      expect(component.form.label().value()).toBe('');
+      expect(component.form.flags().value()).toBe('');
 
       fixture.componentRef.setInput('filter', { label: 'x' });
       await fixture.whenStable();
       fixture.componentRef.setInput('filter', null);
       await fixture.whenStable();
-      expect(component.label.value).toBe('');
+      expect(component.form.label().value()).toBe('');
     });
 
     it('should apply trimmed filter on submit', async () => {
       const emitted: (TaxoStoreNodeTreeFilter | null | undefined)[] = [];
       component.filter.subscribe((f) => emitted.push(f));
-      component.label.setValue(' dog ');
-      component.flags.setValue(' ');
+      component.form.label().value.set(' dog ');
+      component.form.flags().value.set(' ');
       buttons()[1].click();
       await fixture.whenStable();
       expect(component.filter()).toEqual({ label: 'dog', flags: undefined });
       expect(emitted).toEqual([{ label: 'dog', flags: undefined }]);
+    });
+
+    it('should not render a form element', () => {
+      expect((fixture.nativeElement as HTMLElement).querySelector('form')).toBeNull();
+      expect(buttons().every((b) => b.type === 'button')).toBe(true);
+    });
+
+    it('should be dirty after typing and pristine once applied', async () => {
+      const input = (fixture.nativeElement as HTMLElement).querySelector('input')!;
+      input.value = ' dog ';
+      input.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+      expect(component.form().dirty()).toBe(true);
+
+      buttons()[1].click();
+      await fixture.whenStable();
+      // the applied filter is shown normalized, as it is now in sync
+      expect(component.form.label().value()).toBe('dog');
+      expect(component.form().dirty()).toBe(false);
+    });
+
+    it('should apply on Enter', async () => {
+      const input = (fixture.nativeElement as HTMLElement).querySelector('input')!;
+      input.value = 'cat';
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      await fixture.whenStable();
+      expect(component.filter()).toEqual({ label: 'cat', flags: undefined });
+    });
+
+    it('should clear typed values on reset when filter is already null', async () => {
+      fixture.componentRef.setInput('filter', null);
+      await fixture.whenStable();
+      component.form.label().value.set('typed');
+      buttons()[0].click();
+      await fixture.whenStable();
+      expect(component.filter()).toBeNull();
+      expect(component.form.label().value()).toBe('');
     });
 
     it('should reset filter', async () => {
@@ -72,7 +110,7 @@ describe('TaxoStoreNodeFilter', () => {
       buttons()[0].click();
       await fixture.whenStable();
       expect(component.filter()).toBeNull();
-      expect(component.label.value).toBe('');
+      expect(component.form.label().value()).toBe('');
     });
   });
 
@@ -96,22 +134,22 @@ describe('TaxoStoreNodeFilter', () => {
     it('should be wrapped and load filter from data', async () => {
       await setup({ filter: { label: 'bird', flags: 'f' } });
       expect(component.wrapped).toBe(true);
-      const form = (fixture.nativeElement as HTMLElement).querySelector('form')!;
+      const form = (fixture.nativeElement as HTMLElement).querySelector('.filter')!;
       expect(form.classList.contains('wrapped')).toBe(true);
-      expect(component.label.value).toBe('bird');
-      expect(component.flags.value).toBe('f');
+      expect(component.form.label().value()).toBe('bird');
+      expect(component.form.flags().value()).toBe('f');
     });
 
     it('should start empty without data filter', async () => {
       await setup(null);
       expect(component.wrapped).toBe(true);
-      expect(component.label.value).toBe('');
+      expect(component.form.label().value()).toBe('');
     });
 
     it('should close with filter on apply', async () => {
       await setup({});
-      component.label.setValue('x');
-      component.flags.setValue('ab');
+      component.form.label().value.set('x');
+      component.form.flags().value.set('ab');
       component.apply();
       expect(dialogRef.close).toHaveBeenCalledWith({ label: 'x', flags: 'ab' });
     });

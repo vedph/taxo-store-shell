@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { form, FormField, required } from '@angular/forms/signals';
 import { MatCard, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -11,11 +11,13 @@ import { firstValueFrom } from 'rxjs';
 import { TaxoStoreService } from '@myrmidon/taxo-store-api';
 import { TaxoStoreEditor, TaxoStoreTreeNode } from '@myrmidon/taxo-store-editor';
 
+const DEFAULT_TREE_ID = 'animals';
+
 @Component({
   selector: 'app-taxo-store-editor-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule,
+    FormField,
     MatCard,
     MatCardHeader,
     MatCardTitle,
@@ -34,9 +36,8 @@ export class TaxoStoreEditorPage implements OnInit {
   private readonly _taxoStoreService = inject(TaxoStoreService);
   private readonly _snackBar = inject(MatSnackBar);
 
-  public readonly treeIdControl = new FormControl<string>('animals', {
-    nonNullable: true,
-    validators: Validators.required,
+  public readonly treeForm = form(signal({ treeId: DEFAULT_TREE_ID }), (p) => {
+    required(p.treeId);
   });
 
   public readonly availableTrees = signal<{ id: string; name: string; flat?: boolean }[]>([]);
@@ -66,8 +67,9 @@ export class TaxoStoreEditorPage implements OnInit {
   }
 
   public selectTree(): void {
-    if (this.treeIdControl.valid && this.treeIdControl.value) {
-      this.selectedTreeId.set(this.treeIdControl.value);
+    const treeId = this.treeForm.treeId().value();
+    if (this.treeForm().valid() && treeId) {
+      this.selectedTreeId.set(treeId);
       this.pickedNode.set(null);
     }
   }
@@ -82,6 +84,6 @@ export class TaxoStoreEditorPage implements OnInit {
   public clearSelection(): void {
     this.selectedTreeId.set(null);
     this.pickedNode.set(null);
-    this.treeIdControl.reset();
+    this.treeForm().reset({ treeId: DEFAULT_TREE_ID });
   }
 }

@@ -1,7 +1,5 @@
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
-
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,7 +16,6 @@ import { AuthJwtLoginComponent, AuthJwtService, Credentials } from '@myrmidon/au
   styleUrls: ['./login-page.component.css'],
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
-    ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatIconModule,

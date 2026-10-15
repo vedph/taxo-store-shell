@@ -3,11 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "check:libs": "node scripts/check-local-libs.mjs",
+    "prestart": "node scripts/check-local-libs.mjs",
     "start": "ng serve",
+    "prebuild": "node scripts/check-local-libs.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build:libs": "ng build @myrmidon/taxo-store-api && ng build @myrmidon/taxo-store-editor && ng build @myrmidon/taxo-store-picker"
+    "build:libs": "node scripts/build-libs.mjs"
   },
   "prettier": {
     "printWidth": 100,

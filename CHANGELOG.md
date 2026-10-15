@@ -1,5 +1,6 @@
 # History
 
+- 2026-10-15: ⚠️ migrated to signal forms.
 - 2026-10-14: searchable mapping labels (requires TaxoStore API 1.1.0 for searching mappings; with previous versions, lookup just ignores mappings):
   - `@myrmidon/taxo-store-api` (1.2.0):
     - `TaxoStoreNodeMapping` has a new `filteredLabel` property.

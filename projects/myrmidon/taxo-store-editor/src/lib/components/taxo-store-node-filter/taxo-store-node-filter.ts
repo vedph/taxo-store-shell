@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, effect, inject, model, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  linkedSignal,
+  model,
+  untracked,
+} from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +25,25 @@ export interface TaxoStoreNodeFilterDialogData {
 }
 
 /**
+ * The editable values of the filter form.
+ */
+interface FilterDraft {
+  label: string;
+  flags: string;
+}
+
+function toDraft(filter: TaxoStoreNodeTreeFilter | null | undefined): FilterDraft {
+  return { label: filter?.label ?? '', flags: filter?.flags ?? '' };
+}
+
+function toModel(draft: FilterDraft): TaxoStoreNodeTreeFilter {
+  return {
+    label: draft.label.trim() || undefined,
+    flags: draft.flags.trim() || undefined,
+  };
+}
+
+/**
  * Component for editing a tree store node filter.
  * Can be used standalone or inside a dialog.
  */
@@ -24,7 +51,7 @@ export interface TaxoStoreNodeFilterDialogData {
   selector: 'ts-taxo-store-node-filter',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule,
+    FormField,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -35,8 +62,7 @@ export interface TaxoStoreNodeFilterDialogData {
   templateUrl: './taxo-store-node-filter.html',
   styleUrls: ['./taxo-store-node-filter.scss'],
 })
-export class TaxoStoreNodeFilter implements OnInit {
-  private readonly _fb = inject(FormBuilder);
+export class TaxoStoreNodeFilter {
   public readonly dialogRef = inject<MatDialogRef<TaxoStoreNodeFilter>>(MatDialogRef, {
     optional: true,
   });
@@ -47,61 +73,41 @@ export class TaxoStoreNodeFilter implements OnInit {
    */
   public readonly filter = model<TaxoStoreNodeTreeFilter | null | undefined>();
 
-  public wrapped = false;
+  public readonly wrapped = this.dialogRef !== null;
 
-  public label: FormControl<string>;
-  public flags: FormControl<string>;
-  public form: FormGroup;
+  // the filter is written only by an explicit apply, so any new filter,
+  // including the echo of an apply, rebuilds the draft: this shows the
+  // applied values as normalized (trimmed)
+  private readonly _draft = linkedSignal(() => toDraft(this.filter()));
+
+  public readonly form = form(this._draft);
 
   constructor() {
-    this.label = this._fb.control<string>('', { nonNullable: true });
-    this.flags = this._fb.control<string>('', { nonNullable: true });
-    this.form = this._fb.group({
-      label: this.label,
-      flags: this.flags,
-    });
-
-    if (this.dialogRef) {
-      this.wrapped = true;
-      if (this.data?.filter) {
-        this.filter.set(this.data.filter);
-      }
+    if (this.dialogRef && this.data?.filter) {
+      this.filter.set(this.data.filter);
     }
 
+    // whenever the draft is back in sync with the filter, it has no
+    // pending changes
     effect(() => {
-      this.updateForm(this.filter());
+      const draft = this._draft();
+      untracked(() => {
+        if (JSON.stringify(draft) === JSON.stringify(toDraft(this.filter()))) {
+          this.form().reset();
+        }
+      });
     });
-  }
-
-  public ngOnInit(): void {
-    this.updateForm(this.filter());
-  }
-
-  private updateForm(filter?: TaxoStoreNodeTreeFilter | null): void {
-    if (!filter) {
-      this.form.reset();
-      return;
-    }
-    this.label.setValue(filter.label ?? '');
-    this.flags.setValue(filter.flags ?? '');
-    this.form.markAsPristine();
-  }
-
-  private getFilter(): TaxoStoreNodeTreeFilter {
-    return {
-      label: this.label.value?.trim() || undefined,
-      flags: this.flags.value?.trim() || undefined,
-    };
   }
 
   public reset(): void {
-    this.form.reset();
+    // the filter might already be null, which would not rebuild the draft
+    this._draft.set(toDraft(null));
     this.filter.set(null);
     this.dialogRef?.close(null);
   }
 
   public apply(): void {
-    const filter = this.getFilter();
+    const filter = toModel(this._draft());
     this.filter.set(filter);
     this.dialogRef?.close(filter);
   }

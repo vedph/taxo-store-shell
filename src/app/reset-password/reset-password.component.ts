@@ -1,11 +1,6 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import {
-  FormGroup,
-  FormControl,
-  FormBuilder,
-  Validators,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { email, form, FormField, FormRoot, required } from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -25,7 +20,8 @@ import { AuthJwtAccountService } from '@myrmidon/auth-jwt-admin';
   styleUrls: ['./reset-password.component.css'],
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
-    ReactiveFormsModule,
+    FormField,
+    FormRoot,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
@@ -36,44 +32,34 @@ import { AuthJwtAccountService } from '@myrmidon/auth-jwt-admin';
   ],
 })
 export class ResetPasswordComponent {
-  public readonly busy = signal<boolean>(false);
+  private readonly _snackbar = inject(MatSnackBar);
+  private readonly _accountService = inject(AuthJwtAccountService);
 
-  public email: FormControl<string | null>;
-  public form: FormGroup;
+  public readonly form = form(
+    signal({ email: '' }),
+    (p) => {
+      required(p.email);
+      email(p.email);
+    },
+    {
+      submission: {
+        action: async (f) => {
+          await this.reset(f.email().value());
+          return undefined;
+        },
+      },
+    },
+  );
 
-  constructor(
-    private _snackbar: MatSnackBar,
-    private _accountService: AuthJwtAccountService,
-    formBuilder: FormBuilder
-  ) {
-    this.email = formBuilder.control(null, [
-      Validators.required,
-      Validators.email,
-    ]);
-    this.form = formBuilder.group({
-      email: this.email,
-    });
-  }
+  public readonly busy = computed(() => this.form().submitting());
 
-  public reset(): void {
-    if (this.busy() || !this.email.value) {
-      return;
+  private async reset(address: string): Promise<void> {
+    try {
+      await firstValueFrom(this._accountService.resetPassword(address));
+      this._snackbar.open(`Message sent to ${address}`, 'OK');
+    } catch (error) {
+      console.error(error);
+      this._snackbar.open(`Error sending message to ${address}`, 'OK');
     }
-
-    this.busy.set(true);
-    this._accountService.resetPassword(this.email.value).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this._snackbar.open(`Message sent to ${this.email.value}`, 'OK');
-      },
-      error: (error) => {
-        this.busy.set(false);
-        console.error(error);
-        this._snackbar.open(
-          `Error sending message to ${this.email.value}`,
-          'OK'
-        );
-      },
-    });
   }
 }

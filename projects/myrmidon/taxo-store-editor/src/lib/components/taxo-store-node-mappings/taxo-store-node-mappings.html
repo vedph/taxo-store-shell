@@ -85,26 +85,26 @@
       </fieldset>
     }
 
-    <form [formGroup]="form" (submit)="saveMapping()">
+    <div class="mapping-form">
       <div class="form-row">
         <mat-form-field class="scope-field">
           <mat-label>scope</mat-label>
-          <input matInput [formControl]="scope" />
-          @if (scope.hasError('required')) {
+          <input matInput [formField]="form.scope" (keydown.enter)="saveMapping()" />
+          @if (form.scope().getError('required')) {
             <mat-error>Scope is required</mat-error>
           }
-          @if (scope.hasError('maxlength')) {
+          @if (form.scope().getError('maxLength')) {
             <mat-error>Scope is too long</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>target</mat-label>
-          <input matInput [formControl]="target" />
-          @if (target.hasError('required')) {
+          <input matInput [formField]="form.target" (keydown.enter)="saveMapping()" />
+          @if (form.target().getError('required')) {
             <mat-error>Target is required</mat-error>
           }
-          @if (target.hasError('maxlength')) {
+          @if (form.target().getError('maxLength')) {
             <mat-error>Target is too long</mat-error>
           }
         </mat-form-field>
@@ -113,33 +113,39 @@
       <div class="form-row">
         <mat-form-field>
           <mat-label>label (optional)</mat-label>
-          <input matInput [formControl]="label" />
-          @if (label.hasError('maxlength')) {
+          <input matInput [formField]="form.label" (keydown.enter)="saveMapping()" />
+          @if (form.label().getError('maxLength')) {
             <mat-error>Label is too long</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>filtered label (optional)</mat-label>
-          <input matInput [formControl]="filteredLabel" />
+          <input matInput [formField]="form.filteredLabel" (keydown.enter)="saveMapping()" />
           <mat-hint>searchable label; built from label when empty</mat-hint>
-          @if (filteredLabel.hasError('maxlength')) {
+          @if (form.filteredLabel().getError('maxLength')) {
             <mat-error>Filtered label is too long</mat-error>
           }
         </mat-form-field>
       </div>
 
-      @if (form.hasError('duplicate')) {
+      @if (form().getError('duplicate')) {
         <mat-error role="alert">This node already has a mapping with this scope and target</mat-error>
       }
 
       <div class="form-row actions">
-        <button type="button" mat-button (click)="cancelMapping()">Cancel</button>
-        <button type="submit" mat-flat-button [disabled]="form.invalid">
+        <button type="button" mat-button class="cancel-btn" (click)="cancelMapping()">Cancel</button>
+        <button
+          type="button"
+          mat-flat-button
+          class="save-btn"
+          [disabled]="form().invalid()"
+          (click)="saveMapping()"
+        >
           <mat-icon>check</mat-icon>
           Save mapping
         </button>
       </div>
-    </form>
+    </div>
   }
 </mat-expansion-panel>

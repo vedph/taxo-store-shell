@@ -1,11 +1,11 @@
-<form [formGroup]="form" [class.wrapped]="wrapped" (submit)="apply()">
+<div class="filter" [class.wrapped]="wrapped">
   <div class="form-row">
     <mat-form-field>
-      <input matInput [formControl]="label" placeholder="label" />
+      <input matInput [formField]="form.label" placeholder="label" (keydown.enter)="apply()" />
     </mat-form-field>
 
     <mat-form-field class="flags-field">
-      <input matInput [formControl]="flags" placeholder="flags" />
+      <input matInput [formField]="form.flags" placeholder="flags" (keydown.enter)="apply()" />
     </mat-form-field>
   </div>
 
@@ -20,13 +20,14 @@
       <mat-icon class="mat-warn">clear</mat-icon>
     </button>
     <button
-      type="submit"
+      type="button"
       mat-icon-button
       matTooltip="Apply filter"
       aria-label="Apply filter"
-      [disabled]="form.invalid"
+      [disabled]="form().invalid()"
+      (click)="apply()"
     >
       <mat-icon class="mat-primary">check_circle</mat-icon>
     </button>
   </div>
-</form>
+</div>

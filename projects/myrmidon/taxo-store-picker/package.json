@@ -1,14 +1,14 @@
 {
   "name": "@myrmidon/taxo-store-picker",
-  "version": "1.1.0",
+  "version": "1.2.1",
   "description": "Tree store - node picker component.",
   "keywords": [
     "Tree store"
   ],
-  "homepage": "https://github.com/vedph/tree-store-shell",
+  "homepage": "https://github.com/vedph/taxo-store-shell",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vedph/tree-store-shell"
+    "url": "https://github.com/vedph/taxo-store-shell"
   },
   "author": {
     "name": "Daniele Fusi"
@@ -18,8 +18,8 @@
     "@angular/core": "^22.2.1",
     "@myrmidon/cadmus-refs-lookup": "^11.0.8",
     "@myrmidon/ngx-tools": "^3.0.2",
-    "@myrmidon/taxo-store-api": "^1.2.0",
-    "@myrmidon/taxo-store-editor": "^1.2.0"
+    "@myrmidon/taxo-store-api": "^1.2.1",
+    "@myrmidon/taxo-store-editor": "^1.2.1"
   },
   "dependencies": {
     "tslib": "^2.3.0"

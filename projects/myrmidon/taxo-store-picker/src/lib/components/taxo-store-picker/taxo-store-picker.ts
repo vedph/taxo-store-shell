@@ -8,7 +8,6 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
@@ -59,7 +58,6 @@ export interface FlagOption {
   selector: 'ts-taxo-store-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     MatButtonModule,
     MatExpansionPanel,
     MatExpansionPanelHeader,

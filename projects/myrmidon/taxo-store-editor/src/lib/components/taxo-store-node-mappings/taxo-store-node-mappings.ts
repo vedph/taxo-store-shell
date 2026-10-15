@@ -8,14 +8,15 @@ import {
   signal,
 } from '@angular/core';
 import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+  form,
+  FormField,
+  maxLengthError,
+  PathKind,
+  required,
+  SchemaPath,
+  SchemaPathRules,
+  validate,
+} from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -43,6 +44,48 @@ interface MappingRow extends TaxoStoreNodeMapping {
 }
 
 /**
+ * The editable values of the mapping form.
+ */
+interface MappingDraft {
+  scope: string;
+  target: string;
+  label: string;
+  filteredLabel: string;
+}
+
+function toDraft(mapping?: TaxoStoreNodeMapping): MappingDraft {
+  return {
+    scope: mapping?.scope ?? '',
+    target: mapping?.target ?? '',
+    label: mapping?.label ?? '',
+    filteredLabel: mapping?.filteredLabel ?? '',
+  };
+}
+
+function toMapping(draft: MappingDraft): TaxoStoreNodeMapping {
+  // as for nodes, when not set the filtered label is built from label
+  const label = draft.label.trim();
+  return {
+    scope: draft.scope.trim(),
+    target: draft.target.trim(),
+    label: label || undefined,
+    filteredLabel: draft.filteredLabel.trim() || filterTaxoLabel(label) || undefined,
+  };
+}
+
+/**
+ * Limit the length of a text. Unlike the maxLength rule, this does not set
+ * the native maxlength of the bound input, which would make the browser
+ * silently truncate a longer pasted text instead of reporting an error.
+ */
+function maxChars<TPathKind extends PathKind>(
+  path: SchemaPath<string, SchemaPathRules.Supported, TPathKind>,
+  max: number,
+): void {
+  validate(path, ({ value }) => (value().length > max ? maxLengthError(max) : null));
+}
+
+/**
  * Get a text from a value picked from a lookup, which can be anything.
  */
 function toText(value: unknown): string {
@@ -65,7 +108,7 @@ function toText(value: unknown): string {
   selector: 'ts-taxo-store-node-mappings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule,
+    FormField,
     MatButtonModule,
     MatExpansionModule,
     MatFormFieldModule,
@@ -78,7 +121,6 @@ function toText(value: unknown): string {
   styleUrls: ['./taxo-store-node-mappings.scss'],
 })
 export class TaxoStoreNodeMappings {
-  private readonly _fb = inject(FormBuilder);
   private readonly _storage = inject(RamStorageService);
 
   /**
@@ -121,59 +163,36 @@ export class TaxoStoreNodeMappings {
       this.lookupConfigs() ?? this._storage.retrieve<RefLookupConfig[]>(LOOKUP_CONFIGS_KEY) ?? [],
   );
 
-  public scope: FormControl<string>;
-  public target: FormControl<string>;
-  public label: FormControl<string>;
-  public filteredLabel: FormControl<string>;
-  public form: FormGroup;
+  // the mapping being edited, loaded when editing starts
+  private readonly _draft = signal(toDraft());
 
-  constructor() {
-    this.scope = this._fb.control<string>('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(100)],
-    });
-    this.target = this._fb.control<string>('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(500)],
-    });
-    this.label = this._fb.control<string>('', {
-      nonNullable: true,
-      validators: Validators.maxLength(500),
-    });
-    this.filteredLabel = this._fb.control<string>('', {
-      nonNullable: true,
-      validators: Validators.maxLength(500),
-    });
-    this.form = this._fb.group(
-      {
-        scope: this.scope,
-        target: this.target,
-        label: this.label,
-        filteredLabel: this.filteredLabel,
-      },
-      { validators: (group) => this.validateUnique(group) },
-    );
-  }
+  public readonly form = form(this._draft, (p) => {
+    required(p.scope);
+    maxChars(p.scope, 100);
+    required(p.target);
+    maxChars(p.target, 500);
+    maxChars(p.label, 500);
+    maxChars(p.filteredLabel, 500);
+    validate(p, ({ value }) => (this.isDuplicate(value()) ? { kind: 'duplicate' } : null));
+  });
 
   /**
    * The pair scope + target must be unique among the mappings of a node.
    */
-  private validateUnique(group: AbstractControl): ValidationErrors | null {
-    const scope = (group.get('scope')?.value as string | undefined)?.trim();
-    const target = (group.get('target')?.value as string | undefined)?.trim();
-    if (!scope || !target) return null;
+  private isDuplicate(draft: MappingDraft): boolean {
+    const scope = draft.scope.trim();
+    const target = draft.target.trim();
+    if (!scope || !target) return false;
 
     const index = this.editedIndex();
-    return this.mappings().some((m, i) => i !== index && m.scope === scope && m.target === target)
-      ? { duplicate: true }
-      : null;
+    return this.mappings().some((m, i) => i !== index && m.scope === scope && m.target === target);
   }
 
   /**
    * Start adding a new mapping.
    */
   public addMapping(): void {
-    this.form.reset();
+    this.form().reset(toDraft());
     this.editedIndex.set(-1);
   }
 
@@ -185,12 +204,7 @@ export class TaxoStoreNodeMappings {
     if (!mapping) return;
 
     this.editedIndex.set(index);
-    this.form.reset({
-      scope: mapping.scope,
-      target: mapping.target,
-      label: mapping.label ?? '',
-      filteredLabel: mapping.filteredLabel ?? '',
-    });
+    this.form().reset(toDraft(mapping));
   }
 
   /**
@@ -212,16 +226,9 @@ export class TaxoStoreNodeMappings {
    */
   public saveMapping(): void {
     const index = this.editedIndex();
-    if (index === null || this.form.invalid) return;
+    if (index === null || this.form().invalid()) return;
 
-    // as for nodes, when not set the filtered label is built from label
-    const label = this.label.value.trim();
-    const mapping: TaxoStoreNodeMapping = {
-      scope: this.scope.value.trim(),
-      target: this.target.value.trim(),
-      label: label || undefined,
-      filteredLabel: this.filteredLabel.value.trim() || filterTaxoLabel(label) || undefined,
-    };
+    const mapping = toMapping(this._draft());
     this.mappings.update((mappings) =>
       index === -1 ? [...mappings, mapping] : mappings.map((m, i) => (i === index ? mapping : m)),
     );
@@ -238,11 +245,13 @@ export class TaxoStoreNodeMappings {
     if (!target) return;
 
     const service = event.config.service;
-    this.scope.setValue(service?.id || event.config.name);
-    this.target.setValue(target);
-    this.label.setValue(toText(event.itemLabel) || toText(service?.getName(event.item)));
-    // the filtered label of the previous label no longer applies
-    this.filteredLabel.setValue('');
-    this.form.markAsDirty();
+    this._draft.set({
+      scope: service?.id || event.config.name,
+      target,
+      label: toText(event.itemLabel) || toText(service?.getName(event.item)),
+      // the filtered label of the previous label no longer applies
+      filteredLabel: '',
+    });
+    this.form().markAsDirty();
   }
 }

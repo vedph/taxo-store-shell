@@ -61,7 +61,7 @@ describe('TaxoStoreNodeEditorDialog', () => {
     expect(component.isNew).toBe(true);
     expect(el.querySelector('h2')?.textContent).toContain('New Node');
     expect(saveButton(el).textContent?.trim()).toBe('Create');
-    expect(component.form.invalid).toBe(true);
+    expect(component.form().invalid()).toBe(true);
     expect(saveButton(el).disabled).toBe(true);
   });
 
@@ -70,25 +70,27 @@ describe('TaxoStoreNodeEditorDialog', () => {
     expect(component.isNew).toBe(false);
     expect(el.querySelector('h2')?.textContent).toContain('Edit Node');
     expect(saveButton(el).textContent?.trim()).toBe('Save');
-    expect(component.key.value).toBe('k');
-    expect(component.label.value).toBe('Label');
-    expect(component.filteredLabel.value).toBe('label');
-    expect(component.flags.value).toBe('ab');
-    expect(component.note.value).toBe('a note');
-    expect(component.form.pristine).toBe(true);
-    expect(component.form.valid).toBe(true);
+    expect(component.form.key().value()).toBe('k');
+    expect(component.form.label().value()).toBe('Label');
+    expect(component.form.filteredLabel().value()).toBe('label');
+    expect(component.form.flags().value()).toBe('ab');
+    expect(component.form.note().value()).toBe('a note');
+    expect(component.form().dirty()).toBe(false);
+    expect(component.form().valid()).toBe(true);
   });
 
   it('should load an existing node without flags and note', async () => {
     await setup({ treeId: 't', node: { ...existing, flags: undefined, note: undefined } });
-    expect(component.flags.value).toBe('');
-    expect(component.note.value).toBe('');
+    expect(component.form.flags().value()).toBe('');
+    expect(component.form.note().value()).toBe('');
   });
 
   it('should show required errors when touched', async () => {
     const el = await setup({ treeId: 't' });
-    component.key.markAsTouched();
-    component.label.markAsTouched();
+    // mat-form-field shows errors only for touched controls
+    expect(el.querySelectorAll('mat-error').length).toBe(0);
+    component.form.key().markAsTouched();
+    component.form.label().markAsTouched();
     fixture.detectChanges();
     const errors = Array.from(el.querySelectorAll('mat-error')).map((e) => e.textContent?.trim());
     expect(errors).toEqual(['Key is required', 'Label is required']);
@@ -108,11 +110,11 @@ describe('TaxoStoreNodeEditorDialog', () => {
 
   it('should save a new child node with trimmed values and defaults', async () => {
     const el = await setup({ treeId: 't', parentId: 3 });
-    component.key.setValue(' new ');
-    component.label.setValue(' New Label ');
-    component.filteredLabel.setValue('  ');
-    component.flags.setValue(' ');
-    component.note.setValue('');
+    component.form.key().value.set(' new ');
+    component.form.label().value.set(' New Label ');
+    component.form.filteredLabel().value.set('  ');
+    component.form.flags().value.set(' ');
+    component.form.note().value.set('');
     fixture.detectChanges();
     expect(saveButton(el).disabled).toBe(false);
     saveButton(el).click();
@@ -133,9 +135,9 @@ describe('TaxoStoreNodeEditorDialog', () => {
 
   it('should save an edited node keeping its ID and parent', async () => {
     await setup({ treeId: 't', node: existing, parentId: 99 });
-    component.label.setValue('Changed');
-    component.flags.setValue(' c ');
-    component.note.setValue(' note ');
+    component.form.label().value.set('Changed');
+    component.form.flags().value.set(' c ');
+    component.form.note().value.set(' note ');
     component.save();
     expect(dialogRef.close).toHaveBeenCalledWith({
       node: {
@@ -153,9 +155,9 @@ describe('TaxoStoreNodeEditorDialog', () => {
 
   it('should save a new root node without parent', async () => {
     await setup({ treeId: 't' });
-    component.key.setValue('r');
-    component.label.setValue('R');
-    component.filteredLabel.setValue('r!');
+    component.form.key().value.set('r');
+    component.form.label().value.set('R');
+    component.form.filteredLabel().value.set('r!');
     component.save();
     const node = dialogRef.close.mock.calls[0][0].node as TaxoStoreNode;
     expect(node.parentId).toBeUndefined();
@@ -165,7 +167,8 @@ describe('TaxoStoreNodeEditorDialog', () => {
   it('should have general and mappings tabs', async () => {
     const el = await setup({ treeId: 't', node: { ...existing, mappings: [mapping] } });
     expect(tabLabels(el)).toEqual(['General', 'Mappings (1)']);
-    expect(el.querySelector('form')).toBeTruthy();
+    expect(el.querySelector('.node-form')).toBeTruthy();
+    expect(el.querySelector('form')).toBeNull();
     expect(el.querySelector('ts-taxo-store-node-mappings')).toBeNull();
 
     await selectTab(1);

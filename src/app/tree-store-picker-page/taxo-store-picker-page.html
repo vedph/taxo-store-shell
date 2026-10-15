@@ -9,15 +9,15 @@
     <div class="tree-selector">
       <mat-form-field>
         @if (availableTrees().length > 0) {
-          <mat-select [formControl]="treeIdControl">
+          <mat-select [formField]="treeForm.treeId">
             @for (tree of availableTrees(); track tree.id) {
               <mat-option [value]="tree.id">{{ tree.name }} ({{ tree.id }})</mat-option>
             }
           </mat-select>
         } @else {
-          <input matInput [formControl]="treeIdControl" placeholder="tree ID" />
+          <input matInput [formField]="treeForm.treeId" placeholder="tree ID" />
         }
-        @if (treeIdControl.hasError('required')) {
+        @if (treeForm.treeId().getError('required')) {
           <mat-error>Tree ID is required</mat-error>
         }
       </mat-form-field>
@@ -26,7 +26,7 @@
         type="button"
         mat-flat-button
         color="primary"
-        [disabled]="treeIdControl.invalid || loading()"
+        [disabled]="treeForm().invalid() || loading()"
         (click)="selectTree()"
       >
         load tree
