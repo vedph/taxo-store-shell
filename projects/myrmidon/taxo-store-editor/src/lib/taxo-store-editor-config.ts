@@ -22,8 +22,8 @@ export const TAXO_STORE_EDITOR_CONFIG = new InjectionToken<TaxoStoreEditorConfig
  * The default key generator: generate a node key from its label.
  * - trim the label and remove diacritics from its letters (like filterTaxoLabel).
  * - convert to lowercase.
- * - replace each sequence of whitespaces with a single underscore, and each
- * colon with a dot.
+ * - replace each sequence of whitespaces with a single underscore, each
+ * colon with a dot, each apostrophe with underscore.
  * - keep only letters a-z, digits, underscores, dashes and dots; any other
  * character is dropped.
  * @param label The label.
@@ -37,5 +37,6 @@ export function generateTaxoKey(label: string): string {
     .toLowerCase()
     .replace(/\s+/g, '_')
     .replace(/:/g, '.')
+    .replace(/'/g, '_')
     .replace(/[^a-z0-9_.-]/g, '');
 }

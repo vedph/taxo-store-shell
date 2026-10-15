@@ -109,10 +109,10 @@ When creating a node, a button next to the key generates it from the label. The 
 
 - trims the label and removes diacritics from its letters, like `filterTaxoLabel`;
 - converts it to lowercase;
-- replaces each sequence of whitespaces with a single `_`, and each `:` with `.`;
+- replaces each sequence of whitespaces with a single `_`, each `:` with `.`, and `'` to `_`;
 - keeps only letters `a`-`z`, digits, `_`, `-` and `.`, dropping any other character (including letters with no `a`-`z` base, like Greek letters or `ß`).
 
-For instance, `Città: Old Town` becomes `citta._old_town`.
+For instance, `Roberto d'Angiò` becomes `roberto_d_angio`.
 
 To use your own key generator, provide a `TaxoStoreEditorConfig` object with the `TAXO_STORE_EDITOR_CONFIG` injection token, e.g. in `app.config.ts`:
 
