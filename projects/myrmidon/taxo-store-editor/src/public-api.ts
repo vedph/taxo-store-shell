@@ -2,6 +2,8 @@
  * Public API Surface of taxo-store-editor
  */
 
+export * from './lib/taxo-store-editor-config';
+
 export * from './lib/services/taxo-store-paged-tree.service';
 export * from './lib/services/taxo-store-paged-list.service';
 

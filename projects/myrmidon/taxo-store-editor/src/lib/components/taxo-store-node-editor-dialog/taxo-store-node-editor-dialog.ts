@@ -6,7 +6,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { form, FormField, required } from '@angular/forms/signals';
+import { form, FormField, readonly, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { TaxoStoreNode, TaxoStoreNodeMapping, filterTaxoLabel } from '@myrmidon/taxo-store-api';
 
+import { generateTaxoKey, TAXO_STORE_EDITOR_CONFIG } from '../../taxo-store-editor-config';
 import { TaxoStoreNodeMappings } from '../taxo-store-node-mappings/taxo-store-node-mappings';
 
 /**
@@ -76,6 +77,10 @@ function toDraft(node: TaxoStoreNode | undefined): NodeDraft {
  * Dialog component for editing or creating a taxo store node. The dialog
  * has two tabs: general, with the node's own data, and mappings, with the
  * mappings of the node to external resources.
+ * The key of an existing node cannot be changed, as it is used to refer to
+ * the node from external data. For a new node, the key can be generated from
+ * its label, using the keyGenerator of the TAXO_STORE_EDITOR_CONFIG
+ * configuration when provided, else generateTaxoKey.
  */
 @Component({
   selector: 'ts-taxo-store-node-editor-dialog',
@@ -96,6 +101,8 @@ function toDraft(node: TaxoStoreNode | undefined): NodeDraft {
 })
 export class TaxoStoreNodeEditorDialog {
   private readonly _dialogRef = inject(MatDialogRef<TaxoStoreNodeEditorDialog>);
+  private readonly _config = inject(TAXO_STORE_EDITOR_CONFIG, { optional: true });
+  private readonly _keyGenerator = this._config?.keyGenerator ?? generateTaxoKey;
 
   public readonly data: TaxoStoreNodeEditorDialogData = inject(MAT_DIALOG_DATA);
 
@@ -106,8 +113,17 @@ export class TaxoStoreNodeEditorDialog {
 
   public readonly form = form(this._draft, (p) => {
     required(p.key);
+    // the key of an existing node is immutable
+    readonly(p.key, () => !this.isNew);
     required(p.label);
   });
+
+  /**
+   * True when the key can be generated from the label.
+   */
+  public readonly canGenerateKey = computed(
+    () => this.isNew && this.form.label().value().trim().length > 0,
+  );
 
   private readonly _mappingsEditor = viewChild(TaxoStoreNodeMappings);
   private _mappingsChanged = false;
@@ -120,6 +136,15 @@ export class TaxoStoreNodeEditorDialog {
    * The node can't be saved until that mapping is saved or cancelled.
    */
   public readonly mappingEditing = computed(() => this._mappingsEditor()?.editing() ?? false);
+
+  /**
+   * Generate the key of a new node from its label.
+   */
+  public generateKey(): void {
+    if (!this.canGenerateKey()) return;
+    this.form.key().value.set(this._keyGenerator(this._draft().label.trim()));
+    this.form.key().markAsDirty();
+  }
 
   public onMappingsChange(mappings: TaxoStoreNodeMapping[]): void {
     this.mappings.set(mappings);
@@ -145,7 +170,8 @@ export class TaxoStoreNodeEditorDialog {
       id: this.data.node?.id ?? 0,
       treeId: this.data.treeId,
       parentId: this.data.node?.parentId ?? this.data.parentId,
-      key: draft.key.trim(),
+      // the key of an existing node never changes
+      key: this.data.node?.key ?? draft.key.trim(),
       label: draft.label.trim(),
       // when not set, the filtered label is built from label like the server does
       filteredLabel: draft.filteredLabel.trim() || filterTaxoLabel(draft.label),

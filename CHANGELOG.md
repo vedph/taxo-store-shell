@@ -1,6 +1,11 @@
 # History
 
 - 2026-10-15: ⚠️ migrated to signal forms.
+- 2026-10-15: node keys and editor configuration:
+  - `@myrmidon/taxo-store-editor`:
+    - added `TAXO_STORE_EDITOR_CONFIG` injection token for an optional `TaxoStoreEditorConfig`, whose `keyGenerator` generates node keys from labels; when not set, `generateTaxoKey` is used (see README). It merges whitespace runs into a single `_`.
+    - `TaxoStoreNodeEditorDialog`: for new nodes, a button next to the key generates it from the label. ⚠️ The key of an existing node is read-only (shown dimmed, with a lock icon), as it is the identifier used by external data; the TaxoStore API now also rejects key changes.
+    - `TaxoStoreNodeEditorDialog`, `TaxoStoreNodeFilter`: fields use `mat-label` rather than placeholders, so that labels remain visible when fields have a value.
 - 2026-10-14: searchable mapping labels (requires TaxoStore API 1.1.0 for searching mappings; with previous versions, lookup just ignores mappings):
   - `@myrmidon/taxo-store-api` (1.2.0):
     - `TaxoStoreNodeMapping` has a new `filteredLabel` property.

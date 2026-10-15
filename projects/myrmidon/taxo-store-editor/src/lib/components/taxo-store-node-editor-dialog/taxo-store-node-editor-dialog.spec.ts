@@ -4,6 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import { TaxoStoreNode, TaxoStoreNodeMapping } from '@myrmidon/taxo-store-api';
 
+import { TAXO_STORE_EDITOR_CONFIG, TaxoStoreEditorConfig } from '../../taxo-store-editor-config';
 import {
   TaxoStoreNodeEditorDialog,
   TaxoStoreNodeEditorDialogData,
@@ -26,11 +27,15 @@ describe('TaxoStoreNodeEditorDialog', () => {
   };
   const mapping: TaxoStoreNodeMapping = { scope: 'viaf', target: '100', label: 'Dante' };
 
-  async function setup(data: TaxoStoreNodeEditorDialogData): Promise<HTMLElement> {
+  async function setup(
+    data: TaxoStoreNodeEditorDialogData,
+    config?: TaxoStoreEditorConfig,
+  ): Promise<HTMLElement> {
     dialogRef = { close: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [TaxoStoreNodeEditorDialog],
       providers: [
+        ...(config ? [{ provide: TAXO_STORE_EDITOR_CONFIG, useValue: config }] : []),
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: dialogRef },
         // tabs attach their content on a transition event unless not animated
@@ -55,6 +60,96 @@ describe('TaxoStoreNodeEditorDialog', () => {
     component.selectedTab.set(index);
     await fixture.whenStable();
   }
+
+  function generateButton(el: HTMLElement): HTMLButtonElement | null {
+    return el.querySelector('button[aria-label="Generate key from label"]');
+  }
+
+  function keyInput(el: HTMLElement): HTMLInputElement {
+    return el.querySelector('.node-form input')!;
+  }
+
+  it('should label every field with mat-label', async () => {
+    const el = await setup({ treeId: 't', node: existing });
+    const fields = Array.from(el.querySelectorAll('.node-form mat-form-field'));
+    expect(fields.length).toBe(5);
+    expect(fields.map((f) => f.querySelector('mat-label')?.textContent?.trim())).toEqual([
+      'key',
+      'label',
+      'filtered label (optional)',
+      'flags (optional)',
+      'note (optional)',
+    ]);
+    expect(el.querySelectorAll('.node-form [placeholder]').length).toBe(0);
+  });
+
+  it('should generate the key of a new node with the default generator', async () => {
+    const el = await setup({ treeId: 't' });
+    expect(generateButton(el)!.disabled).toBe(true);
+    component.form.label().value.set(' Città: Old Town ');
+    await fixture.whenStable();
+    expect(generateButton(el)!.disabled).toBe(false);
+    generateButton(el)!.click();
+    await fixture.whenStable();
+    expect(component.form.key().value()).toBe('citta._old_town');
+    expect(keyInput(el).value).toBe('citta._old_town');
+    expect(component.form.key().dirty()).toBe(true);
+  });
+
+  it('should not generate a key from a blank label', async () => {
+    const el = await setup({ treeId: 't' });
+    component.form.label().value.set('   ');
+    await fixture.whenStable();
+    expect(generateButton(el)!.disabled).toBe(true);
+    component.form.key().value.set('k');
+    component.generateKey();
+    expect(component.form.key().value()).toBe('k');
+  });
+
+  it('should generate the key with the configured generator', async () => {
+    const keyGenerator = vi.fn((label: string) => `x-${label}`);
+    const el = await setup({ treeId: 't' }, { keyGenerator });
+    component.form.label().value.set(' Fox ');
+    await fixture.whenStable();
+    generateButton(el)!.click();
+    expect(keyGenerator).toHaveBeenCalledWith('Fox');
+    expect(component.form.key().value()).toBe('x-Fox');
+  });
+
+  it('should use the default generator when the configuration has none', async () => {
+    const el = await setup({ treeId: 't' }, {});
+    component.form.label().value.set('Red Fox');
+    await fixture.whenStable();
+    generateButton(el)!.click();
+    expect(component.form.key().value()).toBe('red_fox');
+  });
+
+  it('should not allow changing the key of an existing node', async () => {
+    const el = await setup({ treeId: 't', node: existing });
+    expect(generateButton(el)).toBeNull();
+    expect(keyInput(el).readOnly).toBe(true);
+    expect(component.form.key().readonly()).toBe(true);
+    const keyField = el.querySelector('.node-form mat-form-field')!;
+    expect(keyField.classList).toContain('readonly-key');
+    expect(keyField.querySelector('mat-icon.key-lock')?.getAttribute('aria-hidden')).toBe('true');
+    // projected into the suffix and hint slots, not into the input area
+    expect(keyField.querySelector('.mat-mdc-form-field-icon-suffix .key-lock')).toBeTruthy();
+    expect(keyField.querySelector('.mat-mdc-form-field-hint-wrapper mat-hint')).toBeTruthy();
+    expect(keyField.querySelector('.mat-mdc-form-field-infix mat-hint')).toBeNull();
+    expect(el.querySelector('.node-form mat-hint')?.textContent).toContain('cannot be changed');
+    // even when changed programmatically, the original key is saved
+    component.form.key().value.set('other');
+    component.save();
+    expect(dialogRef.close.mock.calls[0][0].node.key).toBe('k');
+  });
+
+  it('should allow editing the key of a new node', async () => {
+    const el = await setup({ treeId: 't' });
+    expect(keyInput(el).readOnly).toBe(false);
+    const keyField = el.querySelector('.node-form mat-form-field')!;
+    expect(keyField.classList).not.toContain('readonly-key');
+    expect(keyField.querySelector('.key-lock')).toBeNull();
+  });
 
   it('should start empty and invalid for a new node', async () => {
     const el = await setup({ treeId: 't', parentId: 3 });

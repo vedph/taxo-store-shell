@@ -10,6 +10,18 @@ mat-form-field {
   width: 100%;
 }
 
+// the key of an existing node cannot be changed
+.readonly-key {
+  input {
+    color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+    cursor: default;
+  }
+
+  .key-lock {
+    color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+  }
+}
+
 .tab-icon {
   margin-left: 4px;
   font-size: 18px;

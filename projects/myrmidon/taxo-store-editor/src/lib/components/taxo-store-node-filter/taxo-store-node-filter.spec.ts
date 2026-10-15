@@ -29,6 +29,15 @@ describe('TaxoStoreNodeFilter', () => {
       expect(form.classList.contains('wrapped')).toBe(false);
     });
 
+    it('should label every field with mat-label', () => {
+      const el = fixture.nativeElement as HTMLElement;
+      const labels = Array.from(el.querySelectorAll('mat-form-field')).map((f) =>
+        f.querySelector('mat-label')?.textContent?.trim(),
+      );
+      expect(labels).toEqual(['label', 'flags']);
+      expect(el.querySelectorAll('[placeholder]').length).toBe(0);
+    });
+
     it('should have accessible names for buttons', () => {
       expect(buttons().map((b) => b.getAttribute('aria-label'))).toEqual([
         'Reset filter',

@@ -1,11 +1,13 @@
 <div class="filter" [class.wrapped]="wrapped">
   <div class="form-row">
     <mat-form-field>
-      <input matInput [formField]="form.label" placeholder="label" (keydown.enter)="apply()" />
+      <mat-label>label</mat-label>
+      <input matInput [formField]="form.label" (keydown.enter)="apply()" />
     </mat-form-field>
 
     <mat-form-field class="flags-field">
-      <input matInput [formField]="form.flags" placeholder="flags" (keydown.enter)="apply()" />
+      <mat-label>flags</mat-label>
+      <input matInput [formField]="form.flags" (keydown.enter)="apply()" />
     </mat-form-field>
   </div>
 
