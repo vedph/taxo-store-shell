@@ -65,10 +65,21 @@
               <dt>Label</dt>
               <dd>{{ node.label }}</dd>
             </div>
-            @if (node.flags) {
+            @if (node.features?.length) {
               <div>
-                <dt>Flags</dt>
-                <dd>{{ node.flags }}</dd>
+                <dt>Features</dt>
+                <dd>
+                  <ul class="features">
+                    @for (feature of node.features; track $index) {
+                      <li>
+                        {{ feature.name }}
+                        @if (feature.value) {
+                          = {{ feature.value }}
+                        }
+                      </li>
+                    }
+                  </ul>
+                </dd>
               </div>
             }
             @if (node.note) {

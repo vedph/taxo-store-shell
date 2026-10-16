@@ -10,8 +10,10 @@ import {
 } from '@myrmidon/paged-data-browsers';
 import {
   TaxoStoreService,
+  TaxoStoreNodeFeature,
+  TaxoStoreNodeFeatureFilter,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreNodeFilter,
-  TaxoStoreNodeFlagMatchMode,
   TaxoStoreNode,
 } from '@myrmidon/taxo-store-api';
 
@@ -26,9 +28,36 @@ export interface TaxoStoreNodeTreeFilter extends TreeNodeFilter {
   label?: string;
 
   /**
-   * Optional flags filter.
+   * Optional feature criteria.
    */
-  flags?: string;
+  features?: TaxoStoreNodeFeatureFilter[];
+
+  /**
+   * The mode used to combine the feature criteria (default all).
+   */
+  featureMatchMode?: TaxoStoreNodeFeatureMatchMode;
+}
+
+/**
+ * Check whether the specified filter has any feature criteria.
+ * @param filter The filter.
+ * @returns True if it has feature criteria.
+ */
+export function hasTaxoFeatureFilter(filter: TaxoStoreNodeTreeFilter): boolean {
+  return (filter.features?.length ?? 0) > 0;
+}
+
+/**
+ * Get a short text summarizing the specified features, e.g. for a tooltip.
+ * @param features The features.
+ * @returns The summary, or undefined if there are no features.
+ */
+export function summarizeTaxoFeatures(
+  features: TaxoStoreNodeFeature[] | null | undefined,
+): string | undefined {
+  if (!features?.length) return undefined;
+  // markers (features with an empty value) are shown by their name only
+  return features.map((f) => (f.value ? `${f.name}=${f.value}` : f.name)).join('; ');
 }
 
 /**
@@ -52,9 +81,14 @@ export interface TaxoStoreTreeNode extends TreeNode {
   filteredLabel: string;
 
   /**
-   * Optional flags attached to this node.
+   * The features of this node, when loaded.
    */
-  flags?: string;
+  features?: TaxoStoreNodeFeature[];
+
+  /**
+   * A short text summarizing the features of this node, when any.
+   */
+  featuresSummary?: string;
 
   /**
    * Optional note attached to this node.
@@ -85,9 +119,20 @@ export function toTaxoStoreTreeNode(node: TaxoStoreNode): TaxoStoreTreeNode {
     treeId: node.treeId,
     key: node.key,
     filteredLabel: node.filteredLabel,
-    flags: node.flags,
+    features: node.features ?? undefined,
+    featuresSummary: summarizeTaxoFeatures(node.features),
     note: node.note,
   };
+}
+
+/**
+ * Apply the features of the specified tree filter to an API filter.
+ */
+function applyFeatures(source: TaxoStoreNodeTreeFilter, target: TaxoStoreNodeFilter): void {
+  if (hasTaxoFeatureFilter(source)) {
+    target.features = source.features;
+    target.featureMatchMode = source.featureMatchMode ?? TaxoStoreNodeFeatureMatchMode.All;
+  }
 }
 
 /**
@@ -139,27 +184,14 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
       });
     }
 
-    // If parentId is undefined, fetch root nodes.
-    // When a label filter is active, use getNodes with isRoot+matchDescendants so
-    // only roots that have at least one matching descendant are returned.
-    // Without a label filter, use getRootNodes (simpler, no CTE overhead).
-    if (filter.parentId === undefined) {
-      if (filter.label) {
-        const rootFilter: TaxoStoreNodeFilter = {
-          pageNumber,
-          pageSize,
-          treeId: this._treeId,
-          isRoot: true,
-          filteredLabel: filter.label,
-          filteredMappingLabel: filter.label,
-          matchDescendants: true,
-          flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
-          includePosition: true,
-        };
-        if (filter.flags) {
-          rootFilter.flags = filter.flags;
-        }
-        return this._treeStoreService.getNodes(rootFilter).pipe(
+    const hasFeatures = hasTaxoFeatureFilter(filter);
+
+    // Without a label or features filter, root nodes are got with
+    // getRootNodes (simpler, no CTE overhead).
+    if (filter.parentId === undefined && !filter.label && !hasFeatures) {
+      return this._treeStoreService
+        .getRootNodes(this._treeId, { pageNumber, pageSize }, true, false, true)
+        .pipe(
           map((page) => ({
             pageNumber: page.pageNumber,
             pageSize: page.pageSize,
@@ -168,38 +200,33 @@ export class TaxoStorePagedTreeService implements PagedTreeStoreService<TaxoStor
             items: page.items.map((node) => toTaxoStoreTreeNode(node)),
           })),
         );
-      }
-      return this._treeStoreService.getRootNodes(this._treeId, { pageNumber, pageSize }, true).pipe(
-        map((page) => ({
-          pageNumber: page.pageNumber,
-          pageSize: page.pageSize,
-          pageCount: page.pageCount,
-          total: page.total,
-          items: page.items.map((node) => toTaxoStoreTreeNode(node)),
-        })),
-      );
     }
 
-    // For child nodes, use getNodes with parentId filter.
-    // When a label filter is active, matchDescendants ensures a child node is
-    // included even if only a deeper descendant matches.
+    // Else, use getNodes for the roots (when parentId is undefined) or for
+    // the children of the parent node. When a label and/or features filter
+    // is active, matchDescendants ensures that a node is included also when
+    // only a deeper descendant matches, so that matching nodes are never
+    // hidden by their non-matching ancestors.
     const apiFilter: TaxoStoreNodeFilter = {
       pageNumber,
       pageSize,
       treeId: this._treeId,
-      parentId: filter.parentId,
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
       includePosition: true,
+      includeFeatures: true,
     };
+    if (filter.parentId === undefined) {
+      apiFilter.isRoot = true;
+    } else {
+      apiFilter.parentId = filter.parentId;
+    }
 
     if (filter.label) {
       apiFilter.filteredLabel = filter.label;
       apiFilter.filteredMappingLabel = filter.label;
-      apiFilter.matchDescendants = true;
     }
-
-    if (filter.flags) {
-      apiFilter.flags = filter.flags;
+    applyFeatures(filter, apiFilter);
+    if (filter.label || hasFeatures) {
+      apiFilter.matchDescendants = true;
     }
 
     return this._treeStoreService.getNodes(apiFilter).pipe(

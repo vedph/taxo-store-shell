@@ -24,7 +24,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RefLookupComponent } from '@myrmidon/cadmus-refs-lookup';
 import {
   TaxoStoreNode,
-  TaxoStoreNodeFlagMatchMode,
+  TaxoStoreNodeFeatureFilter,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreService,
 } from '@myrmidon/taxo-store-api';
 import { TaxoStoreEditor, TaxoStoreTreeNode } from '@myrmidon/taxo-store-editor';
@@ -36,17 +37,24 @@ import {
 } from '../../services/taxo-store-lookup.service';
 
 /**
- * A flag option for the flags filter.
+ * A feature option for the features filter, i.e. a predefined feature
+ * criterion which users can select to filter nodes by their features.
  */
-export interface FlagOption {
+export interface FeatureOption {
   /**
-   * The flag character (single character).
+   * The unique ID of the option.
    */
   id: string;
   /**
-   * The display name for the flag.
+   * The display name for the option.
    */
   name: string;
+  /**
+   * The feature criterion matched by this option, e.g. `{ name: 'obsolete' }`
+   * for nodes having an obsolete feature, or `{ name: 'status', value:
+   * 'draft' }` for nodes having a status feature equal to draft.
+   */
+  filter: TaxoStoreNodeFeatureFilter;
 }
 
 /**
@@ -90,17 +98,17 @@ export class TaxoStorePicker {
   public readonly hasTopNodeFilter = input<boolean>(true);
 
   /**
-   * True if this component should show a flags filter
-   * in a select control, showing a list of node flags to filter by.
-   * This is an additional filter for lookup (node's flags).
+   * True if this component should show a features filter
+   * in a select control, showing a list of feature options to filter by.
+   * This is an additional filter for lookup (node's features).
    */
-  public readonly hasFlagsFilter = input<boolean>(true);
+  public readonly hasFeaturesFilter = input<boolean>(true);
 
   /**
-   * The available flags to filter by. For each flag, an object with
-   * 'id' and 'name' is expected. This is used only if hasFlagsFilter is true.
+   * The available feature options to filter by. This is used only if
+   * hasFeaturesFilter is true.
    */
-  public readonly availableFlags = input<FlagOption[]>([]);
+  public readonly availableFeatures = input<FeatureOption[]>([]);
 
   /**
    * Whether users can edit nodes. Default is true.
@@ -149,27 +157,30 @@ export class TaxoStorePicker {
   public readonly expanded = signal<boolean>(false);
   public readonly topNodes = signal<TaxoStoreNode[]>([]);
   public readonly selectedTopNodeKey = signal<string | null>(null);
-  public readonly selectedFlagMatchMode = signal<TaxoStoreNodeFlagMatchMode>(
-    TaxoStoreNodeFlagMatchMode.Any,
+  public readonly selectedFeatureMatchMode = signal<TaxoStoreNodeFeatureMatchMode>(
+    TaxoStoreNodeFeatureMatchMode.All,
   );
-  public readonly selectedFlags = signal<string[]>([]);
+  /**
+   * The IDs of the selected feature options.
+   */
+  public readonly selectedFeatures = signal<string[]>([]);
   public readonly pickedItem = signal<TaxoStoreNode | null>(null);
   public readonly loading = signal<boolean>(false);
 
   /**
-   * Flag match mode options for the select.
+   * Feature match mode options for the select.
    */
-  public readonly flagMatchModes: { value: TaxoStoreNodeFlagMatchMode; label: string }[] = [
-    { value: TaxoStoreNodeFlagMatchMode.Any, label: 'any' },
-    { value: TaxoStoreNodeFlagMatchMode.All, label: 'all' },
-    { value: TaxoStoreNodeFlagMatchMode.None, label: 'none' },
+  public readonly featureMatchModes: { value: TaxoStoreNodeFeatureMatchMode; label: string }[] = [
+    { value: TaxoStoreNodeFeatureMatchMode.All, label: 'all' },
+    { value: TaxoStoreNodeFeatureMatchMode.Any, label: 'any' },
+    { value: TaxoStoreNodeFeatureMatchMode.None, label: 'none' },
   ];
 
   /**
-   * Whether the flags filter should be shown.
+   * Whether the features filter should be shown.
    */
-  public readonly showFlagsFilter = computed(() => {
-    return this.hasFlagsFilter() && this.availableFlags().length > 0;
+  public readonly showFeaturesFilter = computed(() => {
+    return this.hasFeaturesFilter() && this.availableFeatures().length > 0;
   });
 
   /**
@@ -193,10 +204,13 @@ export class TaxoStorePicker {
       options.ancestorKey = topNodeKey;
     }
 
-    const flags = this.selectedFlags();
-    if (flags.length > 0) {
-      options.flags = flags.join('');
-      options.flagMatchMode = this.selectedFlagMatchMode();
+    const selected = new Set(this.selectedFeatures());
+    const features = this.availableFeatures()
+      .filter((f) => selected.has(f.id))
+      .map((f) => f.filter);
+    if (features.length > 0) {
+      options.features = features;
+      options.featureMatchMode = this.selectedFeatureMatchMode();
     }
 
     return options;
@@ -259,7 +273,7 @@ export class TaxoStorePicker {
       key: node.key,
       label: node.label,
       filteredLabel: node.filteredLabel,
-      flags: node.flags,
+      features: node.features,
       note: node.note,
       x: node.x,
       y: node.y,
@@ -272,10 +286,10 @@ export class TaxoStorePicker {
   }
 
   /**
-   * Clear all selected flags.
+   * Clear all selected features.
    */
-  public clearFlags(): void {
-    this.selectedFlags.set([]);
+  public clearFeatures(): void {
+    this.selectedFeatures.set([]);
   }
 
   /**
@@ -286,16 +300,17 @@ export class TaxoStorePicker {
   }
 
   /**
-   * Handle flag match mode change.
+   * Handle feature match mode change.
    */
-  public onFlagMatchModeChange(mode: TaxoStoreNodeFlagMatchMode): void {
-    this.selectedFlagMatchMode.set(mode);
+  public onFeatureMatchModeChange(mode: TaxoStoreNodeFeatureMatchMode): void {
+    this.selectedFeatureMatchMode.set(mode);
   }
 
   /**
-   * Handle flags selection change.
+   * Handle features selection change.
+   * @param ids The IDs of the selected feature options.
    */
-  public onFlagsChange(flags: string[]): void {
-    this.selectedFlags.set(flags);
+  public onFeaturesChange(ids: string[]): void {
+    this.selectedFeatures.set(ids);
   }
 }

@@ -29,6 +29,7 @@ import {
 import { TaxoStoreNode, TaxoStoreService } from '@myrmidon/taxo-store-api';
 
 import {
+  hasTaxoFeatureFilter,
   PagedTaxoStoreNode,
   TaxoStoreNodeTreeFilter,
   TaxoStorePagedTreeService,
@@ -58,7 +59,8 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../confirm-dialog/con
  * Each node has buttons for these commands:
  * - pick the node: pick the node and will trigger a nodePick event with the
  *   node picked.
- * - edit the node: edit the current node (including its mappings) in a popup
+ * - edit the node: edit the current node (including its features and
+ *   mappings) in a popup
  *   dialog. If the user saves his changes, the component uses the service to
  *   update the backend and to fetch the updated nodes back, preserving the
  *   affected node in view.
@@ -341,13 +343,18 @@ export class TaxoStoreEditor implements OnDestroy {
    * Edit the specified node.
    */
   public async editNode(node: TaxoStoreTreeNode): Promise<void> {
-    // nodes in the view have no mappings, so get them with the full node
-    const fullNode = await firstValueFrom(this._treeStoreService.getNode(node.id, true));
+    // nodes in the view have no mappings, so get them with the full node,
+    // also getting its features, which might have changed meanwhile
+    const fullNode = await firstValueFrom(this._treeStoreService.getNode(node.id, true, true));
     if (!fullNode) return;
 
     const result = await this.openNodeEditor({
-      // when mappings are requested they are always an array
-      node: { ...fullNode, mappings: fullNode.mappings ?? [] },
+      // when mappings and features are requested they are always arrays
+      node: {
+        ...fullNode,
+        mappings: fullNode.mappings ?? [],
+        features: fullNode.features ?? [],
+      },
       treeId: this.treeId(),
     });
     if (!result) return;
@@ -464,7 +471,7 @@ export class TaxoStoreEditor implements OnDestroy {
     if (!this._listStore) return;
 
     const filter = this._listStore.getFilter();
-    if (filter.label || filter.flags) {
+    if (filter.label || hasTaxoFeatureFilter(filter)) {
       await this.reloadListPage();
     } else {
       // in a flat tree the path is the node only, with its page among roots

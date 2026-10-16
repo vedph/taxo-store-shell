@@ -3,7 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 
 import {
   TaxoStoreNode,
-  TaxoStoreNodeFlagMatchMode,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreService,
 } from '@myrmidon/taxo-store-api';
 
@@ -73,7 +73,6 @@ describe('TaxoStoreLookupService', () => {
       treeId: 'animals',
       filteredLabel: 'bi',
       filteredMappingLabel: 'bi',
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
     });
   });
 
@@ -84,8 +83,8 @@ describe('TaxoStoreLookupService', () => {
         {
           parentKey: 'animal',
           ancestorKey: 'animal.bird',
-          flags: 'ab',
-          flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
+          features: [{ name: 'obsolete' }],
+          featureMatchMode: TaxoStoreNodeFeatureMatchMode.None,
         },
       ),
     );
@@ -95,11 +94,30 @@ describe('TaxoStoreLookupService', () => {
       treeId: 'animals',
       filteredLabel: 'bi',
       filteredMappingLabel: 'bi',
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
       parentKey: 'animal',
       ancestorKey: 'animal.bird',
-      flags: 'ab',
+      features: [{ name: 'obsolete' }],
+      featureMatchMode: TaxoStoreNodeFeatureMatchMode.None,
     });
+  });
+
+  it('lookup should default features match mode to all and ignore empty features', async () => {
+    await firstValueFrom(
+      service.lookup(
+        { treeId: 'animals', text: 'bi', limit: 3 },
+        { features: [{ name: 'status', value: 'draft' }] },
+      ),
+    );
+    expect(api.getNodes.mock.calls[0][0].featureMatchMode).toBe(TaxoStoreNodeFeatureMatchMode.All);
+
+    await firstValueFrom(
+      service.lookup(
+        { treeId: 'animals', text: 'bi', limit: 3 },
+        { features: [], featureMatchMode: TaxoStoreNodeFeatureMatchMode.None },
+      ),
+    );
+    expect(api.getNodes.mock.calls[1][0].features).toBeUndefined();
+    expect(api.getNodes.mock.calls[1][0].featureMatchMode).toBeUndefined();
   });
 
   it('getName should return label or empty', () => {

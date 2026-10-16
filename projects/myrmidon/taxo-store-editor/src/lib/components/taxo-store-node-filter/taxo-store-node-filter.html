@@ -5,10 +5,36 @@
       <input matInput [formField]="form.label" (keydown.enter)="apply()" />
     </mat-form-field>
 
-    <mat-form-field class="flags-field">
-      <mat-label>flags</mat-label>
-      <input matInput [formField]="form.flags" (keydown.enter)="apply()" />
+    <mat-form-field class="features-field">
+      <mat-label>features</mat-label>
+      <mat-chip-grid #featureGrid aria-label="Feature criteria">
+        @for (feature of form.features().value(); track feature) {
+          <mat-chip-row (removed)="removeFeature($index)">
+            {{ feature }}
+            <button type="button" matChipRemove [attr.aria-label]="'Remove feature ' + feature">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip-row>
+        }
+        <input
+          aria-label="New feature criterion"
+          [matChipInputFor]="featureGrid"
+          (matChipInputTokenEnd)="addFeature($event)"
+        />
+      </mat-chip-grid>
+      <mat-hint>name, name=value or name~value, then Enter</mat-hint>
     </mat-form-field>
+
+    @if (form.features().value().length > 0) {
+      <mat-form-field class="mode-field">
+        <mat-label>match</mat-label>
+        <mat-select [formField]="form.featureMatchMode">
+          @for (mode of featureMatchModes; track mode.value) {
+            <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
   </div>
 
   <div class="form-row actions">

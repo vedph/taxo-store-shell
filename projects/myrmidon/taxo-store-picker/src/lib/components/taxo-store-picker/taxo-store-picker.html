@@ -27,43 +27,43 @@
       </mat-form-field>
     }
 
-    <!-- Flags filter -->
-    @if (showFlagsFilter()) {
-      <!-- Flag match mode -->
-      <mat-form-field class="flag-mode-select">
-        <mat-label>flag match</mat-label>
+    <!-- Features filter -->
+    @if (showFeaturesFilter()) {
+      <!-- Feature match mode -->
+      <mat-form-field class="feature-mode-select">
+        <mat-label>feature match</mat-label>
         <mat-select
-          [value]="selectedFlagMatchMode()"
-          (selectionChange)="onFlagMatchModeChange($event.value)"
+          [value]="selectedFeatureMatchMode()"
+          (selectionChange)="onFeatureMatchModeChange($event.value)"
         >
-          @for (mode of flagMatchModes; track mode.value) {
+          @for (mode of featureMatchModes; track mode.value) {
             <mat-option [value]="mode.value">{{ mode.label }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
-      <!-- Flags multi-select -->
-      <mat-form-field class="flags-select">
-        <mat-label>flags</mat-label>
+      <!-- Features multi-select -->
+      <mat-form-field class="features-select">
+        <mat-label>features</mat-label>
         <mat-select
           multiple
-          [value]="selectedFlags()"
-          (selectionChange)="onFlagsChange($event.value)"
+          [value]="selectedFeatures()"
+          (selectionChange)="onFeaturesChange($event.value)"
         >
-          @for (flag of availableFlags(); track flag.id) {
-            <mat-option [value]="flag.id">{{ flag.name }}</mat-option>
+          @for (feature of availableFeatures(); track feature.id) {
+            <mat-option [value]="feature.id">{{ feature.name }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
-      <!-- Clear flags button -->
-      @if (selectedFlags().length > 0) {
+      <!-- Clear features button -->
+      @if (selectedFeatures().length > 0) {
         <button
           type="button"
           mat-icon-button
-          matTooltip="Clear flags"
-          aria-label="Clear flags"
-          (click)="clearFlags()"
+          matTooltip="Clear features"
+          aria-label="Clear features"
+          (click)="clearFeatures()"
         >
           <mat-icon>clear</mat-icon>
         </button>

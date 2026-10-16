@@ -9,7 +9,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
 import { TaxoStoreNode, TaxoStoreService } from '@myrmidon/taxo-store-api';
-import { FlagOption, TaxoStorePicker } from '@myrmidon/taxo-store-picker';
+import { FeatureOption, TaxoStorePicker } from '@myrmidon/taxo-store-picker';
 
 const DEFAULT_TREE_ID = 'animals';
 
@@ -46,13 +46,24 @@ export class TaxoStorePickerPage implements OnInit {
   public readonly pickedNode = signal<TaxoStoreNode | null>(null);
 
   /**
-   * Example flags for demonstration purposes.
+   * Example feature options for demonstration purposes, matching the
+   * features in the mock data of the TaxoStore API.
    * In a real application, these would come from configuration or API.
    */
-  public readonly availableFlags: FlagOption[] = [
-    { id: 'o', name: 'obsolete' },
-    { id: 'd', name: 'draft' },
-    { id: 'v', name: 'verified' },
+  public readonly availableFeatures: FeatureOption[] = [
+    { id: 'obsolete', name: 'obsolete', filter: { name: 'obsolete' } },
+    { id: 'draft', name: 'draft', filter: { name: 'status', value: 'draft' } },
+    { id: 'domestic', name: 'domestic', filter: { name: 'domestic' } },
+    { id: 'sea', name: 'living in the sea', filter: { name: 'habitat', value: 'sea' } },
+    { id: 'red', name: 'red', filter: { name: 'color', value: 'red' } },
+    { id: 'green', name: 'green', filter: { name: 'color', value: 'green' } },
+    { id: 'yellow', name: 'yellow', filter: { name: 'color', value: 'yellow' } },
+    { id: 'stoic', name: 'Stoic school', filter: { name: 'school', value: 'stoic' } },
+    {
+      id: 'plato',
+      name: 'taught by Plato',
+      filter: { name: 'teacher', value: 'plato' },
+    },
   ];
 
   public async ngOnInit(): Promise<void> {

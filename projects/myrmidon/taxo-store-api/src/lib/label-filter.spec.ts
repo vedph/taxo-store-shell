@@ -1,4 +1,4 @@
-import { filterTaxoLabel } from './label-filter';
+import { filterTaxoFeatureValue, filterTaxoLabel } from './label-filter';
 
 describe('filterTaxoLabel', () => {
   it('should return empty for empty input', () => {
@@ -28,5 +28,20 @@ describe('filterTaxoLabel', () => {
 
   it('should drop non-letter characters only', () => {
     expect(filterTaxoLabel('123')).toBe('');
+  });
+});
+
+describe('filterTaxoFeatureValue', () => {
+  it('should return empty for empty input', () => {
+    expect(filterTaxoFeatureValue(undefined)).toBe('');
+    expect(filterTaxoFeatureValue(null)).toBe('');
+    expect(filterTaxoFeatureValue('')).toBe('');
+  });
+
+  it('should filter like labels but keep digits', () => {
+    expect(filterTaxoFeatureValue('Aristotle, 384-322 BC')).toBe('aristotle, 384-322 bc');
+    expect(filterTaxoFeatureValue(' Città #1 ')).toBe('citta 1');
+    expect(filterTaxoFeatureValue('123')).toBe('123');
+    expect(filterTaxoFeatureValue('!?')).toBe('');
   });
 });

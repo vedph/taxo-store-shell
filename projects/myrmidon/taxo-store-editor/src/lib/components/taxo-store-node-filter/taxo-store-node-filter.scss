@@ -26,6 +26,12 @@
   }
 }
 
-.flags-field {
-  max-width: 100px;
+// more specific than .form-row mat-form-field
+.form-row .features-field {
+  flex: 2 1 240px;
+}
+
+.form-row .mode-field {
+  flex: 0 0 100px;
+  min-width: 100px;
 }

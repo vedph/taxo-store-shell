@@ -38,7 +38,14 @@ class FakeTaxoStoreService {
 
   public resetData(): void {
     this.nodes = [
-      { id: 1, treeId: 't', key: 'a', label: 'A', filteredLabel: 'a', flags: 'f' },
+      {
+        id: 1,
+        treeId: 't',
+        key: 'a',
+        label: 'A',
+        filteredLabel: 'a',
+        features: [{ name: 'color', value: 'red' }, { name: 'obsolete' }],
+      },
       { id: 2, treeId: 't', key: 'b', label: 'B', filteredLabel: 'b' },
       { id: 3, parentId: 1, treeId: 't', key: 'a.x', label: 'AX', filteredLabel: 'ax' },
       { id: 4, parentId: 1, treeId: 't', key: 'a.y', label: 'AY', filteredLabel: 'ay' },
@@ -83,8 +90,8 @@ class FakeTaxoStoreService {
     });
   }
 
-  public getTree = vi.fn(
-    (id: string): Observable<TaxoStoreTree | null> => of({ id, name: id, flat: this.flat }),
+  public getTree = vi.fn((id: string): Observable<TaxoStoreTree | null> =>
+    of({ id, name: id, flat: this.flat }),
   );
 
   public getRootNodes = vi.fn((treeId: string, options: PagingOptions) =>
@@ -101,7 +108,7 @@ class FakeTaxoStoreService {
     return this.page(all, filter.pageNumber, filter.pageSize);
   });
 
-  public getNode = vi.fn((id: number, _includeMappings?: boolean) =>
+  public getNode = vi.fn((id: number, _includeMappings?: boolean, _includeFeatures?: boolean) =>
     of(this.nodes.find((n) => n.id === id) ?? null),
   );
 
@@ -214,7 +221,13 @@ describe('TaxoStoreEditor', () => {
   it('should load root nodes', async () => {
     await setup();
     expect(await nodeIds()).toEqual([1, 2]);
-    expect(api.getRootNodes).toHaveBeenCalledWith('t', { pageNumber: 1, pageSize: 20 }, true);
+    expect(api.getRootNodes).toHaveBeenCalledWith(
+      't',
+      { pageNumber: 1, pageSize: 20 },
+      true,
+      false,
+      true,
+    );
     expect(component.loading()).toBe(false);
     expect(el().querySelectorAll('.tree-node-row').length).toBe(2);
     expect(el().querySelector('[role=tree]')).toBeTruthy();
@@ -268,8 +281,12 @@ describe('TaxoStoreEditor', () => {
     ]);
     // a single button adds nodes at the root level
     expect(addButton()?.textContent).toContain('Add root node');
-    // flags
-    expect(el().querySelector('.node-flags')?.textContent?.trim()).toBe('f');
+    // features: their count, with a summary
+    const features = el().querySelectorAll('.node-features');
+    expect(features.length).toBe(1);
+    expect(features[0].textContent?.replace('sell', '').trim()).toBe('2');
+    expect(features[0].getAttribute('aria-label')).toBe('Features: color=red; obsolete');
+    expect(features[0].getAttribute('tabindex')).toBe('0');
   });
 
   it('should hide action buttons when disabled', async () => {
@@ -382,11 +399,11 @@ describe('TaxoStoreEditor', () => {
     dialogResult = { node: { ...original, label: 'B2' } };
     await component.editNode(asTreeNode(await nodeById(2)));
     await settle();
-    // the node is got with its mappings, which are always an array
-    expect(api.getNode).toHaveBeenCalledWith(2, true);
+    // the node is got with its mappings and features, which are always arrays
+    expect(api.getNode).toHaveBeenCalledWith(2, true, true);
     expect(dialog.open).toHaveBeenCalledWith(
       TaxoStoreNodeEditorDialog,
-      editorDialogConfig({ node: { ...original, mappings: [] }, treeId: 't' }),
+      editorDialogConfig({ node: { ...original, mappings: [], features: [] }, treeId: 't' }),
     );
     expect(api.addNode).toHaveBeenCalled();
     expect((await nodeById(2)).label).toBe('B2');
@@ -556,7 +573,14 @@ describe('TaxoStoreEditor', () => {
     beforeEach(() => {
       api.flat = true;
       api.nodes = [
-        { id: 1, treeId: 't', key: 'a', label: 'A', filteredLabel: 'a', flags: 'f' },
+        {
+          id: 1,
+          treeId: 't',
+          key: 'a',
+          label: 'A',
+          filteredLabel: 'a',
+          features: [{ name: 'status', value: 'draft' }],
+        },
         { id: 2, treeId: 't', key: 'c', label: 'C', filteredLabel: 'c' },
         { id: 3, treeId: 't', key: 'e', label: 'E', filteredLabel: 'e' },
       ];
@@ -567,13 +591,22 @@ describe('TaxoStoreEditor', () => {
       expect(component.flat()).toBe(true);
       expect(component.nodes$).toBeUndefined();
       expect(await pageIds()).toEqual([1, 2, 3]);
-      expect(api.getRootNodes).toHaveBeenCalledWith('t', { pageNumber: 1, pageSize: 20 });
+      expect(api.getRootNodes).toHaveBeenCalledWith(
+        't',
+        { pageNumber: 1, pageSize: 20 },
+        false,
+        false,
+        true,
+      );
       expect(el().querySelector('[role=tree]')).toBeNull();
       const rows = el().querySelectorAll('.list-node-row');
       expect(rows.length).toBe(3);
       expect(rows[0].querySelector('.node-key')?.textContent).toBe('a');
       expect(rows[0].querySelector('.node-label')?.textContent).toBe('A');
-      expect(rows[0].querySelector('.node-flags')?.textContent?.trim()).toBe('f');
+      expect(rows[0].querySelector('.node-features')?.getAttribute('aria-label')).toBe(
+        'Features: status=draft',
+      );
+      expect(rows[1].querySelector('.node-features')).toBeNull();
       // a single page needs no pager
       expect(el().querySelector('pdb-compact-pager')).toBeNull();
       expect(component.loading()).toBe(false);
@@ -632,6 +665,19 @@ describe('TaxoStoreEditor', () => {
       expect(await pageIds()).toEqual([1, 2, 3]);
     });
 
+    it('should filter the list by features', async () => {
+      await setup();
+      component.onFilterChange({ features: [{ name: 'status', value: 'draft' }] });
+      await settle();
+      expect(api.getNodes.mock.calls[0][0]).toMatchObject({
+        treeId: 't',
+        isRoot: true,
+        features: [{ name: 'status', value: 'draft' }],
+        featureMatchMode: 'all',
+        includeFeatures: true,
+      });
+    });
+
     it('should pick a node', async () => {
       await setup();
       const picked: TaxoStoreTreeNode[] = [];
@@ -664,7 +710,7 @@ describe('TaxoStoreEditor', () => {
       dialogResult = { node: { ...api.nodes[1], label: 'C2' } };
       listButtons(1)[1].click();
       await settle();
-      expect(api.getNode).toHaveBeenCalledWith(2, true);
+      expect(api.getNode).toHaveBeenCalledWith(2, true, true);
       expect((await page()).items[1].label).toBe('C2');
       expect(component.hiliteId()).toBe(2);
     });

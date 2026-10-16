@@ -1,11 +1,29 @@
 # History
 
+## 1.3.0
+
+- 2026-10-16: ⚠️ generic node features replace node flags (requires TaxoStore API with node features):
+  - `@myrmidon/taxo-store-api` (1.3.0):
+    - ⚠️ `TaxoStoreNode.flags` was removed, replaced by `features` (`TaxoStoreNodeFeature[]` with `name`, `value`, `filteredValue`). As for mappings, an array of features replaces all the features of the node when saving it, while null or undefined features leave them untouched.
+    - ⚠️ `TaxoStoreNodeFlagMatchMode` and the `flags`/`flagMatchMode` properties of `TaxoStoreNodeFilter` were removed, replaced by `features` (`TaxoStoreNodeFeatureFilter[]`) and the optional `featureMatchMode` (`TaxoStoreNodeFeatureMatchMode`: `all`, `any`, `none`). Feature values are filtered with the new `filterTaxoFeatureValue` before being sent.
+    - `getNode`, `getNodeFromKey`, `getRootNodes`, `getChildNodes`, `getDescendantNodes`, `getAncestorNodes` have a new optional `includeFeatures` parameter (after `includeMappings`), and `TaxoStoreNodeFilter` a new `includeFeatures` property.
+    - added `filterTaxoFeatureValue` (like `filterTaxoLabel`, but keeping digits), `parseTaxoFeatureFilter` and `formatTaxoFeatureFilter`.
+  - `@myrmidon/taxo-store-editor` (1.3.0):
+    - ⚠️ `TaxoStoreNodeTreeFilter.flags` and `TaxoStoreTreeNode.flags` were removed, replaced by `features`/`featureMatchMode` and `features`/`featuresSummary`.
+    - added `TaxoStoreNodeFeatures` to edit the features of a node, in a new features tab of `TaxoStoreNodeEditorDialog` (which no longer has a flags field). The node cannot be saved while a feature is being edited.
+    - `TaxoStoreNodeFilter` replaces the flags field with feature criteria entered as chips, plus their match mode.
+    - `TaxoStoreEditor` loads nodes with their features, showing a badge with their count and a tooltip listing them; nodes are edited with their features.
+    - `TaxoStorePagedTreeService` (tree view of `TaxoStoreEditor`) uses `matchDescendants` also for features, at any level, so that a node is shown when it or any of its descendants matches the label and features filters. Previously, flags were applied to each level only (and ignored for roots without a label filter), so that non-matching nodes hid their matching descendants.
+  - `@myrmidon/taxo-store-picker` (1.3.0): ⚠️ `FlagOption`, `hasFlagsFilter` and `availableFlags` were replaced by `FeatureOption` (`id`, `name`, feature `filter`), `hasFeaturesFilter` and `availableFeatures`; `TaxoStoreLookupOptions` has `features` and `featureMatchMode` rather than `flags` and `flagMatchMode`.
 - 2026-10-15: ⚠️ migrated to signal forms.
 - 2026-10-15: node keys and editor configuration:
   - `@myrmidon/taxo-store-editor`:
     - added `TAXO_STORE_EDITOR_CONFIG` injection token for an optional `TaxoStoreEditorConfig`, whose `keyGenerator` generates node keys from labels; when not set, `generateTaxoKey` is used (see README). It merges whitespace runs into a single `_`.
     - `TaxoStoreNodeEditorDialog`: for new nodes, a button next to the key generates it from the label. ⚠️ The key of an existing node is read-only (shown dimmed, with a lock icon), as it is the identifier used by external data; the TaxoStore API now also rejects key changes.
     - `TaxoStoreNodeEditorDialog`, `TaxoStoreNodeFilter`: fields use `mat-label` rather than placeholders, so that labels remain visible when fields have a value.
+
+## 1.2.0
+
 - 2026-10-14: searchable mapping labels (requires TaxoStore API 1.1.0 for searching mappings; with previous versions, lookup just ignores mappings):
   - `@myrmidon/taxo-store-api` (1.2.0):
     - `TaxoStoreNodeMapping` has a new `filteredLabel` property.
@@ -32,6 +50,9 @@
     - new peer dependency: `@myrmidon/cadmus-refs-lookup`.
   - `@myrmidon/taxo-store-picker` (1.0.2): updated peer dependencies.
   - app: configured VIAF lookup for node mappings (added `@myrmidon/cadmus-refs-viaf-lookup`); the trees list in the editor page marks flat trees.
+
+## 0.0.9
+
 - 2026-10-13: updated Angular and packages.
 - 2026-10-03: aligned to TaxoStore API 0.0.9 fixes:
   - removed `@myrmidon/cadmus-part-taxo-store-nodes` (moved elsewhere), including its leftover references in `tsconfig.json`.

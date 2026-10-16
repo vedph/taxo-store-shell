@@ -17,9 +17,14 @@
   <!-- Node actions -->
   <ng-template #actions let-node>
     <span class="node-actions">
-      @if (node.flags) {
-        <span class="node-flags" [attr.aria-label]="'Flags: ' + node.flags">
-          {{ node.flags }}
+      @if (node.featuresSummary) {
+        <span
+          class="node-features"
+          tabindex="0"
+          [matTooltip]="node.featuresSummary"
+          [attr.aria-label]="'Features: ' + node.featuresSummary"
+        >
+          <mat-icon aria-hidden="true">sell</mat-icon>{{ node.features?.length }}
         </span>
       }
 

@@ -4,7 +4,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { DataPage } from '@myrmidon/ngx-tools';
 import {
   TaxoStoreNode,
-  TaxoStoreNodeFlagMatchMode,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreService,
 } from '@myrmidon/taxo-store-api';
 
@@ -25,7 +25,10 @@ describe('TaxoStorePagedListService', () => {
     key: 'a',
     label: 'A',
     filteredLabel: 'a',
-    flags: 'x',
+    features: [
+      { name: 'color', value: 'red', filteredValue: 'red' },
+      { name: 'obsolete', value: '', filteredValue: '' },
+    ],
     note: 'n',
   };
 
@@ -53,10 +56,16 @@ describe('TaxoStorePagedListService', () => {
     expect(api.getRootNodes).not.toHaveBeenCalled();
   });
 
-  it('should get root nodes without filter', async () => {
+  it('should get root nodes with features without filter', async () => {
     service.treeId = 't';
-    const result = await firstValueFrom(service.loadPage(2, 5, {}));
-    expect(api.getRootNodes).toHaveBeenCalledWith('t', { pageNumber: 2, pageSize: 5 });
+    const result = await firstValueFrom(service.loadPage(2, 5, { features: [] }));
+    expect(api.getRootNodes).toHaveBeenCalledWith(
+      't',
+      { pageNumber: 2, pageSize: 5 },
+      false,
+      false,
+      true,
+    );
     expect(api.getNodes).not.toHaveBeenCalled();
     expect(result.pageNumber).toBe(2);
     expect(result.pageSize).toBe(5);
@@ -74,7 +83,8 @@ describe('TaxoStorePagedListService', () => {
         treeId: 't',
         key: 'a',
         filteredLabel: 'a',
-        flags: 'x',
+        features: node.features,
+        featuresSummary: 'color=red; obsolete',
         note: 'n',
       },
     ]);
@@ -91,16 +101,17 @@ describe('TaxoStorePagedListService', () => {
       isRoot: true,
       filteredLabel: 'a',
       filteredMappingLabel: 'a',
-      flags: undefined,
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+      features: undefined,
+      featureMatchMode: undefined,
+      includeFeatures: true,
     });
     expect(result.items.map((n) => n.id)).toEqual([1]);
     expect(result.items[0].hasChildren).toBe(false);
   });
 
-  it('should filter by flags', async () => {
+  it('should filter by features with the default match mode', async () => {
     service.treeId = 't';
-    await firstValueFrom(service.loadPage(1, 5, { flags: 'x' }));
+    await firstValueFrom(service.loadPage(1, 5, { features: [{ name: 'obsolete' }] }));
     expect(api.getNodes).toHaveBeenCalledWith({
       pageNumber: 1,
       pageSize: 5,
@@ -108,8 +119,20 @@ describe('TaxoStorePagedListService', () => {
       isRoot: true,
       filteredLabel: undefined,
       filteredMappingLabel: undefined,
-      flags: 'x',
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+      features: [{ name: 'obsolete' }],
+      featureMatchMode: TaxoStoreNodeFeatureMatchMode.All,
+      includeFeatures: true,
     });
+  });
+
+  it('should filter by features with the specified match mode', async () => {
+    service.treeId = 't';
+    await firstValueFrom(
+      service.loadPage(1, 5, {
+        features: [{ name: 'obsolete' }],
+        featureMatchMode: TaxoStoreNodeFeatureMatchMode.None,
+      }),
+    );
+    expect(api.getNodes.mock.calls[0][0].featureMatchMode).toBe(TaxoStoreNodeFeatureMatchMode.None);
   });
 });

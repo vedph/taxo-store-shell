@@ -1,0 +1,140 @@
+<div class="toolbar">
+  <button type="button" mat-flat-button [disabled]="editing()" (click)="addFeature()">
+    <mat-icon>add</mat-icon>
+    Add feature
+  </button>
+</div>
+
+<!-- Features -->
+@if (features().length > 0) {
+  <table>
+    <thead>
+      <tr>
+        <th scope="col"><span class="visually-hidden">actions</span></th>
+        <th scope="col">name</th>
+        <th scope="col">value</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (feature of features(); track $index; let first = $first; let last = $last) {
+        <tr [class.edited]="$index === editedIndex()">
+          <td class="fit-width">
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Edit feature"
+              [attr.aria-label]="'Edit feature ' + feature.name"
+              [disabled]="editing()"
+              (click)="editFeature($index)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Move feature up"
+              [attr.aria-label]="'Move feature ' + feature.name + ' up'"
+              [disabled]="editing() || first"
+              (click)="moveFeature($index, -1)"
+            >
+              <mat-icon>arrow_upward</mat-icon>
+            </button>
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Move feature down"
+              [attr.aria-label]="'Move feature ' + feature.name + ' down'"
+              [disabled]="editing() || last"
+              (click)="moveFeature($index, 1)"
+            >
+              <mat-icon>arrow_downward</mat-icon>
+            </button>
+            <button
+              type="button"
+              mat-icon-button
+              matTooltip="Delete feature"
+              [attr.aria-label]="'Delete feature ' + feature.name"
+              class="delete-btn"
+              [disabled]="editing()"
+              (click)="deleteFeature($index)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+          <td class="name">{{ feature.name }}</td>
+          <td class="value">{{ feature.value }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @else {
+  <p class="empty-message">No features.</p>
+}
+
+<!-- Feature editor -->
+<mat-expansion-panel
+  [expanded]="editing()"
+  [disabled]="!editing()"
+  [hideToggle]="true"
+  (closed)="cancelFeature()"
+>
+  <mat-expansion-panel-header>
+    <mat-panel-title>{{ editorTitle() }}</mat-panel-title>
+  </mat-expansion-panel-header>
+
+  @if (editing()) {
+    <div class="feature-form">
+      <div class="form-row">
+        <mat-form-field class="name-field">
+          <mat-label>name</mat-label>
+          <input matInput [formField]="form.name" (keydown.enter)="saveFeature()" />
+          @if (form.name().getError('required')) {
+            <mat-error>Name is required</mat-error>
+          }
+          @if (form.name().getError('maxLength')) {
+            <mat-error>Name is too long</mat-error>
+          }
+          @if (form.name().getError('reserved')) {
+            <mat-error>Name cannot include = or ~</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>value (optional)</mat-label>
+          <input matInput [formField]="form.value" (keydown.enter)="saveFeature()" />
+          <mat-hint>empty for a feature which is just a marker</mat-hint>
+          @if (form.value().getError('maxLength')) {
+            <mat-error>Value is too long</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field>
+          <mat-label>filtered value (optional)</mat-label>
+          <input matInput [formField]="form.filteredValue" (keydown.enter)="saveFeature()" />
+          <mat-hint>searchable value; built from value when empty</mat-hint>
+          @if (form.filteredValue().getError('maxLength')) {
+            <mat-error>Filtered value is too long</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="form-row actions">
+        <button type="button" mat-button class="cancel-btn" (click)="cancelFeature()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          mat-flat-button
+          class="save-btn"
+          [disabled]="form().invalid()"
+          (click)="saveFeature()"
+        >
+          <mat-icon>check</mat-icon>
+          Save feature
+        </button>
+      </div>
+    </div>
+  }
+</mat-expansion-panel>

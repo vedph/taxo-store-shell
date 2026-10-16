@@ -1,6 +1,6 @@
 {
   "name": "@myrmidon/taxo-store-api",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Taxonomy store - API services and models.",
   "keywords": [
     "Taxonomy store"

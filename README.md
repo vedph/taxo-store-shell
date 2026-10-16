@@ -14,13 +14,13 @@ There are just two basic entities in the store:
   - a string tree ID (referencing the tree's key).
   - a human-friendly ID string (key) that is unique only within its tree.
   - a human-friendly label string and its searchable (filtered) counterpart.
-  - a set of flags where each character represents a boolean attribute.
   - an optional note.
+  - any number of optional **features**, i.e. generic name=value attributes (e.g. `status`=`draft`, `born`=`384 BC`). A node can have more features with the same name (e.g. `son`=`Mark` and `son`=`Jane`), and a feature with an empty value works as a boolean marker (e.g. `obsolete`). Each feature has a `name` (max 50 characters, without `=` or `~`), a `value` (max 500 characters, possibly empty), and its optional searchable counterpart (`filteredValue`). Features keep their order.
   - any number of optional **mappings** to equivalent entities in external resources (e.g. authority files). Each mapping has a `scope` (the resource the target belongs to, e.g. `viaf`), a `target` (the ID of the entity in that resource, e.g. a VIAF ID), an optional human-friendly `label`, and its optional searchable counterpart (`filteredLabel`). The pair scope + target is unique within a node. Mapping labels can also be used to store aliases of the node's label: lookup finds nodes either via their own label or via any of their mapping labels.
 
 > The project internally uses numeric **identifiers** for internal operations with nodes, and human-friendly string keys for external references (e.g., API calls). This allows for efficient database operations while maintaining usability in external interfaces. Trees have a unique string key (ID) that can be used to reference them externally, while nodes have a unique string key within their respective tree and internally just use a numeric ID, which is more compact and efficient. So, a node key is granted to be unique only within its tree, not globally. If you want to have a globally unique node key (besides its numeric ID, which is internal to the database), you need to prefix it with the tree key followed by some separator, like a slash or a dot.
 
-So, the note data essentially consists only in its identity and the corresponding human-friendly label, plus an optional note and a bunch of customizable flags. This is generic enough and fit to its primary purposes, which is providing **taxonomies** which can be either flat (when all nodes are root nodes) or hierarchical.
+So, the node data essentially consists only in its identity and the corresponding human-friendly label, plus an optional note, its mappings, and any number of generic features. This is generic enough and fit to its primary purposes, which is providing **taxonomies** which can be either flat (when all nodes are root nodes) or hierarchical.
 
 For instance, imagine a taxonomy like that of [IconClass](https://iconclass.org/) for iconographic "keywords". The taxonomy which will be used will use strings as identifiers for both trees and nodes. These will usually be meaningful IDs, like `christ.hand.right.up` for a node (where each dot here represents a step down the tree), and iconography for a tree; but this is up to the taxonomy we want to represent. The store is generic enough to represent any taxonomies, like e.g. product categories, where each category can have subcategories, and each category and subcategory can have a unique key and label.
 
@@ -45,8 +45,9 @@ The service with its models is designed to interact with the [TaxoStore backend 
 Models:
 
 - `TaxoStoreTree`: `id`, `name`, `note`, `flat`.
-- `TaxoStoreNode`: `id`, `parentId`, `treeId`, `key`, `label`, `filteredLabel`, `flags`, `note`, `mappings`, plus `x`, `y` and `hasChildren` when position data is requested.
+- `TaxoStoreNode`: `id`, `parentId`, `treeId`, `key`, `label`, `filteredLabel`, `note`, `mappings`, `features`, plus `x`, `y` and `hasChildren` when position data is requested.
 - `TaxoStoreNodeMapping`: `scope`, `target`, `label`, `filteredLabel`.
+- `TaxoStoreNodeFeature`: `name`, `value`, `filteredValue`.
 
 Node **mappings** are fetched only on request, to keep bulk queries fast, and are saved with their node:
 
@@ -54,6 +55,14 @@ Node **mappings** are fetched only on request, to keep bulk queries fast, and ar
 - when saving a node with `addNode`, an array of `mappings` (even when empty) replaces all the mappings of that node, while null or undefined `mappings` leave them untouched. So, never save an empty array for a node whose mappings you did not load, or you will remove them.
 - `TaxoStoreNodeFilter` has `mappingScope` and `mappingTarget` to find nodes from their mappings (both are exact matches), and `filteredMappingLabel` to match any part of the filtered label of any of their mappings. When both `filteredLabel` and `filteredMappingLabel` are set, they are combined with OR: a node matches when either its own filtered label or that of any of its mappings matches.
 - `filterTaxoLabel` filters a label like the server-side importer does when building filtered labels: it removes diacritics, lowercases, turns any whitespace into a space, and keeps only letters and `-_/.,:;`, trimming the result (e.g. `Federico II d'Angiò` becomes `federico ii dangio`). `getNodes` applies it to `filteredLabel` and `filteredMappingLabel` before sending them, so that any typed text can be compared with the stored filtered labels; when nothing is left after filtering (e.g. just digits), that label filter is not applied.
+
+Node **features** work like mappings:
+
+- when reading, all the methods returning nodes have an `includeFeatures` option (after `includeMappings`), false by default. When features are not requested, `features` is null or undefined.
+- when saving a node with `addNode`, an array of `features` (even when empty) replaces all the features of that node, while null or undefined `features` leave them untouched.
+- `TaxoStoreNodeFilter` has `features`, an array of `TaxoStoreNodeFeatureFilter` criteria, each with an exact `name`, an optional `value` (when undefined or null, any value matches; when empty, only empty values match), and `partial` (true to match any part of the value). Criteria are combined according to `featureMatchMode` (`TaxoStoreNodeFeatureMatchMode`): `all` (the server default: each criterion must be matched), `any`, or `none`.
+- `filterTaxoFeatureValue` filters feature values like `filterTaxoLabel`, except that digits are kept, as values often are numbers or codes. `getNodes` applies it to the values of feature criteria; when nothing is left after filtering a non-empty value, only the feature name is matched.
+- `parseTaxoFeatureFilter` and `formatTaxoFeatureFilter` convert criteria from/to their text form used by the API: `name`, `name=value` (exact) or `name~value` (partial).
 
 ### TaxoStore Editor
 
@@ -81,7 +90,7 @@ The view depends on the `flat` property of the tree, which the editor gets from 
 - a **flat tree** is displayed as a paged list of nodes, each with its key and label. The `hideLoc` and `hideFilter` inputs do not apply to this view.
 - any other tree is displayed as a paged tree, where each node can be expanded to browse its children.
 
-In both views, nodes are sorted by their key, and can be filtered by label and flags. The label filter matches both the filtered label of nodes and the filtered labels of their mappings (e.g. aliases).
+In both views, nodes are sorted by their key, and can be filtered by label and features. The label filter matches both the filtered label of nodes and the filtered labels of their mappings (e.g. aliases). Feature criteria are entered as chips, each typed as `name`, `name=value` or `name~value` followed by Enter, and combined according to the selected match mode (all, any, none). In the tree view, label and features filters also include the nodes whose descendants match them, so that matching nodes are never hidden by their ancestors; a matching node must match both the label and the features by itself. Nodes having features show a badge with their count; its tooltip lists them.
 
 Editing is done via a `TaxoStoreService` instance, which sends requests to a backend API and then fetches the updated nodes back to refresh the view. Commands are:
 
@@ -96,12 +105,13 @@ Editing is done via a `TaxoStoreService` instance, which sends requests to a bac
 - 🟢 `TaxoStoreNodeEditorDialog`
 - 🔑 `ts-taxo-store-node-editor-dialog`
 
-The dialog used to add or edit a node. It has two tabs:
+The dialog used to add or edit a node. It has three tabs:
 
-- _general_: the node's key, label, filtered label, flags and note.
+- _general_: the node's key, label, filtered label and note.
+- _features_: the features of the node (see below).
 - _mappings_: the mappings of the node (see below).
 
-The dialog gets a `TaxoStoreNodeEditorDialogData` object (`treeId`, and either the `node` to edit, or the optional `parentId` of a new node), and returns a `TaxoStoreNodeEditorDialogResult` with the edited `node`, or nothing when cancelled. The node to edit should be got with its mappings (`includeMappings`): when its mappings are null or undefined, they are saved only if the user changes them, so that they are never removed by accident.
+The dialog gets a `TaxoStoreNodeEditorDialogData` object (`treeId`, and either the `node` to edit, or the optional `parentId` of a new node), and returns a `TaxoStoreNodeEditorDialogResult` with the edited `node`, or nothing when cancelled. The node to edit should be got with its mappings and features (`includeMappings`, `includeFeatures`): when its mappings or features are null or undefined, they are saved only if the user changes them, so that they are never removed by accident.
 
 The **key** of a node can be set only when creating it. Once the node exists, its key is read-only (shown with a lock icon and dimmed text), because external data (e.g. Cadmus parts) refer to nodes by tree ID and key; the backend API rejects any attempt to change it. To "rename" a key, add a new node and delete the old one.
 
@@ -134,6 +144,19 @@ export const appConfig: ApplicationConfig = {
 ```
 
 The configuration is optional: when it is not provided, or its `keyGenerator` is not set, `generateTaxoKey` is used. The generated key is just a suggestion, which users can still edit before saving.
+
+#### Node Features
+
+- 🟢 `TaxoStoreNodeFeatures`
+- 🔑 `ts-taxo-store-node-features`
+- ▶️ input:
+  - `features`: the features to edit (two-way bindable).
+- 🔥 output:
+  - `featuresChange` (`TaxoStoreNodeFeature[]`): emitted when features change.
+
+Editor for the features of a node. It shows a button to add a feature, and a table of the current features with their name and value, in their order. Each feature has buttons to edit it, move it up or down, and delete it.
+
+When adding or editing a feature, an editor expands below the table, where you can type name, value and filtered value. The name is required, and cannot include `=` or `~`; the value can be empty, for features which are just markers. More features can have the same name. The filtered value is the searchable form of the value: when empty, it is built from the value with `filterTaxoFeatureValue`.
 
 #### Node Mappings
 
@@ -203,8 +226,8 @@ providers: [
 - ▶️ input:
   - `treeId`\*: the ID of the tree to display and edit.
   - `hasTopNodeFilter`: true if this component should show a top-level nodes filter in a select control, showing a list of top-level nodes to filter by. This is an additional filter for lookup, restricting it to the descendants (at any depth) of the selected top-level node (node's `ancestorKey`).
-  - `hasFlagsFilter`: true if this component should show a flags filter in a select control, showing a list of node flags to filter by. This is an additional filter for lookup (node's flags).
-  - `availableFlags`: the available flags to filter by. For each flag, an object with `id` and `name` is expected. This is used only if `hasFlagsFilter` is true.
+  - `hasFeaturesFilter`: true if this component should show a features filter in a select control, showing a list of predefined feature criteria to filter by, with their match mode (all, any, none). This is an additional filter for lookup (node's features).
+  - `availableFeatures`: the available feature options to filter by. Each option (`FeatureOption`) has an `id`, a display `name`, and the feature criterion it stands for (`filter`, e.g. `{ name: 'status', value: 'draft' }`). This is used only if `hasFeaturesFilter` is true.
   - `canEdit`: whether users can edit nodes. Default is true.
   - `canAdd`: whether users can add nodes. Default is true.
   - `canDelete`: whether users can delete nodes. Default is true.

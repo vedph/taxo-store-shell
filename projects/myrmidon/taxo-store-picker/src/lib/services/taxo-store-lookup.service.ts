@@ -5,8 +5,9 @@ import { map } from 'rxjs/operators';
 import { RefLookupFilter, RefLookupService } from '@myrmidon/cadmus-refs-lookup';
 import {
   TaxoStoreNode,
+  TaxoStoreNodeFeatureFilter,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreNodeFilter,
-  TaxoStoreNodeFlagMatchMode,
   TaxoStoreService,
   filterTaxoLabel,
 } from '@myrmidon/taxo-store-api';
@@ -37,13 +38,14 @@ export interface TaxoStoreLookupOptions {
    */
   ancestorKey?: string;
   /**
-   * The flags to filter by. When specified, only nodes with matching flags are returned.
+   * The features to filter by. When specified, only nodes with matching
+   * features are returned.
    */
-  flags?: string;
+  features?: TaxoStoreNodeFeatureFilter[];
   /**
-   * The flag match mode. Defaults to 'any'.
+   * The mode used to combine the features criteria. Defaults to 'all'.
    */
-  flagMatchMode?: TaxoStoreNodeFlagMatchMode;
+  featureMatchMode?: TaxoStoreNodeFeatureMatchMode;
 }
 
 /**
@@ -67,8 +69,8 @@ export class TaxoStoreLookupService implements RefLookupService {
    * Lookup nodes by their filtered label, or by the filtered label of any of
    * their mappings: a node matches when either of them matches.
    * @param filter The lookup filter containing the search text and tree ID.
-   * @param options Optional filtering options (parentKey, ancestorKey, flags,
-   * flagMatchMode).
+   * @param options Optional filtering options (parentKey, ancestorKey,
+   * features, featureMatchMode).
    * @returns Observable of matching TaxoStoreNode items.
    */
   public lookup(
@@ -89,7 +91,6 @@ export class TaxoStoreLookupService implements RefLookupService {
       treeId: filter.treeId,
       filteredLabel: filter.text,
       filteredMappingLabel: filter.text,
-      flagMatchMode: options?.flagMatchMode ?? TaxoStoreNodeFlagMatchMode.Any,
     };
 
     // Add optional filters from options
@@ -99,8 +100,9 @@ export class TaxoStoreLookupService implements RefLookupService {
     if (options?.ancestorKey) {
       nodeFilter.ancestorKey = options.ancestorKey;
     }
-    if (options?.flags) {
-      nodeFilter.flags = options.flags;
+    if (options?.features?.length) {
+      nodeFilter.features = options.features;
+      nodeFilter.featureMatchMode = options.featureMatchMode ?? TaxoStoreNodeFeatureMatchMode.All;
     }
 
     return this._taxoStoreService.getNodes(nodeFilter).pipe(map((page) => page.items));

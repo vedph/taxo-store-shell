@@ -5,7 +5,12 @@ import { retry, catchError } from 'rxjs/operators';
 
 import { EnvService, ErrorService, DataPage, PagingOptions } from '@myrmidon/ngx-tools';
 
-import { filterTaxoLabel } from '../label-filter';
+import {
+  formatTaxoFeatureFilter,
+  TaxoStoreNodeFeatureFilter,
+  TaxoStoreNodeFeatureMatchMode,
+} from '../feature-filter';
+import { filterTaxoFeatureValue, filterTaxoLabel } from '../label-filter';
 import { TaxoStoreTree, TaxoStoreNode, TaxoNodePathStep } from '../models';
 
 /**
@@ -18,14 +23,21 @@ export interface TaxoStoreTreeFilter {
 }
 
 /**
- * Specifies the modes used to determine how node flags are matched:
- * any (at least one of the flags), all (all the flags), or none (none of
- * the flags must be present).
+ * Options for including additional data in the nodes got from the API.
  */
-export enum TaxoStoreNodeFlagMatchMode {
-  Any = 'any',
-  None = 'none',
-  All = 'all',
+export interface TaxoStoreNodeIncludeOptions {
+  /**
+   * If true, include X (sibling position), Y (depth), and HasChildren.
+   */
+  includePosition?: boolean;
+  /**
+   * If true, include the mappings of each node.
+   */
+  includeMappings?: boolean;
+  /**
+   * If true, include the features of each node.
+   */
+  includeFeatures?: boolean;
 }
 
 /**
@@ -65,8 +77,19 @@ export interface TaxoStoreNodeFilter {
    * any text.
    */
   filteredMappingLabel?: string;
-  flags?: string;
-  flagMatchMode: TaxoStoreNodeFlagMatchMode;
+  /**
+   * The features to match. Each criterion is matched by any feature of the
+   * node having its name and, when specified, its (exact or partial) value.
+   * Values are filtered with filterTaxoFeatureValue before being sent, so
+   * they can be any text; when nothing is left after filtering a non-empty
+   * value, only the feature name is matched.
+   */
+  features?: TaxoStoreNodeFeatureFilter[];
+  /**
+   * The mode used to combine the criteria in features. The server default
+   * is all.
+   */
+  featureMatchMode?: TaxoStoreNodeFeatureMatchMode;
   isLeaf?: boolean;
   /**
    * If true, include X (sibling position), Y (depth), and HasChildren in the response.
@@ -78,9 +101,9 @@ export interface TaxoStoreNodeFilter {
    */
   isRoot?: boolean;
   /**
-   * When true and filteredLabel and/or filteredMappingLabel are set, a node
-   * is included if it directly matches the label(s) OR if any of its
-   * descendants match. Uses a
+   * When true and filteredLabel, filteredMappingLabel and/or features are
+   * set, a node is included if it directly matches these criteria OR if any
+   * of its descendants matches all of them by itself. Uses a
    * reverse-recursive SQL CTE on the server side.
    */
   matchDescendants?: boolean;
@@ -100,6 +123,52 @@ export interface TaxoStoreNodeFilter {
    * Default is false for better performance.
    */
   includeMappings?: boolean;
+  /**
+   * If true, include the features of each node in the response.
+   * Default is false for better performance.
+   */
+  includeFeatures?: boolean;
+}
+
+/**
+ * Build the text sent to the API for the specified feature filter, filtering
+ * its value like stored feature values.
+ * @param filter The feature filter.
+ * @returns The text, or null if the filter has no name.
+ */
+function buildFeatureParam(filter: TaxoStoreNodeFeatureFilter): string | null {
+  const name = filter.name?.trim();
+  if (!name) {
+    return null;
+  }
+  if (filter.value === undefined || filter.value === null) {
+    return name;
+  }
+  const value = filterTaxoFeatureValue(filter.value);
+  // a value with no searchable characters is not applied, as for labels
+  if (!value && filter.value.trim()) {
+    return name;
+  }
+  return formatTaxoFeatureFilter({ name, value, partial: filter.partial });
+}
+
+/**
+ * Build the query parameters for the specified include options.
+ * @param options The options.
+ * @returns The parameters.
+ */
+function buildIncludeParams(options?: TaxoStoreNodeIncludeOptions): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (options?.includePosition) {
+    params['includePosition'] = 'true';
+  }
+  if (options?.includeMappings) {
+    params['includeMappings'] = 'true';
+  }
+  if (options?.includeFeatures) {
+    params['includeFeatures'] = 'true';
+  }
+  return params;
 }
 
 /**
@@ -138,8 +207,8 @@ export class TaxoStoreService {
    * @param url The resource URL.
    * @returns Observable of the resource or null if not found.
    */
-  private getOptional<T>(url: string): Observable<T | null> {
-    return this._http.get<T | null>(url).pipe(
+  private getOptional<T>(url: string, params?: Record<string, string>): Observable<T | null> {
+    return this._http.get<T | null>(url, { params }).pipe(
       catchError((error: HttpErrorResponse) =>
         error.status === 404 ? of(null) : throwError(() => error),
       ),
@@ -206,16 +275,18 @@ export class TaxoStoreService {
    * @param treeId The tree ID.
    * @param key The node key.
    * @param includeMappings If true, include the node's mappings.
+   * @param includeFeatures If true, include the node's features.
    * @returns Observable of the node or null if not found.
    */
   public getNodeFromKey(
     treeId: string,
     key: string,
     includeMappings = false,
+    includeFeatures = false,
   ): Observable<TaxoStoreNode | null> {
     return this.getOptional<TaxoStoreNode>(
-      `${this.getApiUrl()}nodes/tree/${encodeURIComponent(treeId)}/key/${encodeURIComponent(key)}` +
-        (includeMappings ? '?includeMappings=true' : ''),
+      `${this.getApiUrl()}nodes/tree/${encodeURIComponent(treeId)}/key/${encodeURIComponent(key)}`,
+      buildIncludeParams({ includeMappings, includeFeatures }),
     );
   }
 
@@ -223,11 +294,17 @@ export class TaxoStoreService {
    * Get a single node by ID.
    * @param id The node ID.
    * @param includeMappings If true, include the node's mappings.
+   * @param includeFeatures If true, include the node's features.
    * @returns Observable of the node or null if not found.
    */
-  public getNode(id: number, includeMappings = false): Observable<TaxoStoreNode | null> {
+  public getNode(
+    id: number,
+    includeMappings = false,
+    includeFeatures = false,
+  ): Observable<TaxoStoreNode | null> {
     return this.getOptional<TaxoStoreNode>(
-      `${this.getApiUrl()}nodes/${id}` + (includeMappings ? '?includeMappings=true' : ''),
+      `${this.getApiUrl()}nodes/${id}`,
+      buildIncludeParams({ includeMappings, includeFeatures }),
     );
   }
 
@@ -240,7 +317,6 @@ export class TaxoStoreService {
     const params: any = {
       pageNumber: filter.pageNumber.toString(),
       pageSize: filter.pageSize.toString(),
-      flagMatchMode: filter.flagMatchMode,
     };
     if (filter.treeId !== undefined) {
       params.treeId = filter.treeId;
@@ -267,8 +343,15 @@ export class TaxoStoreService {
     if (filteredMappingLabel) {
       params.filteredMappingLabel = filteredMappingLabel;
     }
-    if (filter.flags) {
-      params.flags = filter.flags;
+    // each feature criterion is a repeated parameter
+    const features = (filter.features ?? [])
+      .map((f) => buildFeatureParam(f))
+      .filter((f): f is string => f !== null);
+    if (features.length) {
+      params.features = features;
+      if (filter.featureMatchMode) {
+        params.featureMatchMode = filter.featureMatchMode;
+      }
     }
     if (filter.isLeaf !== undefined) {
       params.isLeaf = filter.isLeaf.toString();
@@ -291,6 +374,9 @@ export class TaxoStoreService {
     if (filter.includeMappings) {
       params.includeMappings = 'true';
     }
+    if (filter.includeFeatures) {
+      params.includeFeatures = 'true';
+    }
 
     return this._http
       .get<DataPage<TaxoStoreNode>>(`${this.getApiUrl()}nodes`, { params })
@@ -304,6 +390,7 @@ export class TaxoStoreService {
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
    * @param includeMappings If true, include the mappings of each node.
+   * @param includeFeatures If true, include the features of each node.
    * @returns Observable of a page of root nodes.
    */
   public getRootNodes(
@@ -311,17 +398,13 @@ export class TaxoStoreService {
     options: PagingOptions,
     includePosition = false,
     includeMappings = false,
+    includeFeatures = false,
   ): Observable<DataPage<TaxoStoreNode>> {
     const params: any = {
       pageNumber: options.pageNumber.toString(),
       pageSize: options.pageSize.toString(),
+      ...buildIncludeParams({ includePosition, includeMappings, includeFeatures }),
     };
-    if (includePosition) {
-      params.includePosition = 'true';
-    }
-    if (includeMappings) {
-      params.includeMappings = 'true';
-    }
 
     return this._http
       .get<DataPage<TaxoStoreNode>>(`${this.getApiUrl()}nodes/roots/${treeId}`, { params })
@@ -331,11 +414,12 @@ export class TaxoStoreService {
   /**
    * Add a new node (when its ID is 0) or update an existing one.
    * The API rejects invalid nodes (e.g. with a parent in another tree,
-   * creating a cycle, having a parent in a flat tree, or with duplicate
-   * mappings) with 400, and duplicate keys with 409.
+   * creating a cycle, having a parent in a flat tree, with duplicate
+   * mappings, or with invalid features) with 400, and duplicate keys with 409.
    * When the node's mappings are an array, they replace all the mappings
    * of that node (an empty array removes them all); when they are null or
-   * undefined, the mappings of the node are left untouched.
+   * undefined, the mappings of the node are left untouched. The same holds
+   * for the node's features.
    * @param node The node to add or update.
    * @returns Observable of the node ID (the new one when adding).
    */
@@ -384,20 +468,16 @@ export class TaxoStoreService {
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
    * @param includeMappings If true, include the mappings of each node.
+   * @param includeFeatures If true, include the features of each node.
    * @returns Observable of an array of child nodes.
    */
   public getChildNodes(
     id: number,
     includePosition = false,
     includeMappings = false,
+    includeFeatures = false,
   ): Observable<TaxoStoreNode[]> {
-    const params: any = {};
-    if (includePosition) {
-      params.includePosition = 'true';
-    }
-    if (includeMappings) {
-      params.includeMappings = 'true';
-    }
+    const params = buildIncludeParams({ includePosition, includeMappings, includeFeatures });
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/children`, { params })
       .pipe(retry(3), catchError(this._error.handleError));
@@ -409,20 +489,16 @@ export class TaxoStoreService {
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
    * @param includeMappings If true, include the mappings of each node.
+   * @param includeFeatures If true, include the features of each node.
    * @returns Observable of an array of descendant nodes.
    */
   public getDescendantNodes(
     id: number,
     includePosition = false,
     includeMappings = false,
+    includeFeatures = false,
   ): Observable<TaxoStoreNode[]> {
-    const params: any = {};
-    if (includePosition) {
-      params.includePosition = 'true';
-    }
-    if (includeMappings) {
-      params.includeMappings = 'true';
-    }
+    const params = buildIncludeParams({ includePosition, includeMappings, includeFeatures });
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/descendants`, { params })
       .pipe(retry(3), catchError(this._error.handleError));
@@ -434,20 +510,16 @@ export class TaxoStoreService {
    * @param includePosition If true, include X (sibling position), Y (depth),
    * and HasChildren in the response. Default is false for better performance.
    * @param includeMappings If true, include the mappings of each node.
+   * @param includeFeatures If true, include the features of each node.
    * @returns Observable of an array of ancestor nodes.
    */
   public getAncestorNodes(
     id: number,
     includePosition = false,
     includeMappings = false,
+    includeFeatures = false,
   ): Observable<TaxoStoreNode[]> {
-    const params: any = {};
-    if (includePosition) {
-      params.includePosition = 'true';
-    }
-    if (includeMappings) {
-      params.includeMappings = 'true';
-    }
+    const params = buildIncludeParams({ includePosition, includeMappings, includeFeatures });
     return this._http
       .get<TaxoStoreNode[]>(`${this.getApiUrl()}nodes/${id}/ancestors`, { params })
       .pipe(retry(3), catchError(this._error.handleError));

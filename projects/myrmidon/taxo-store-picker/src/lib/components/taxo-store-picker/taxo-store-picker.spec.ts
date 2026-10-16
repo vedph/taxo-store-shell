@@ -5,7 +5,7 @@ import { DataPage } from '@myrmidon/ngx-tools';
 import { RefLookupComponent } from '@myrmidon/cadmus-refs-lookup';
 import {
   TaxoStoreNode,
-  TaxoStoreNodeFlagMatchMode,
+  TaxoStoreNodeFeatureMatchMode,
   TaxoStoreService,
 } from '@myrmidon/taxo-store-api';
 import { TaxoStoreEditor, TaxoStoreTreeNode } from '@myrmidon/taxo-store-editor';
@@ -125,49 +125,56 @@ describe('TaxoStorePicker', () => {
     expect(component.topNodes()).toEqual([roots[1]]);
   });
 
-  it('should hide flags filter without available flags', async () => {
+  it('should hide features filter without available features', async () => {
     await setup();
-    expect(component.showFlagsFilter()).toBe(false);
-    expect(el().querySelector('.flags-select')).toBeNull();
+    expect(component.showFeaturesFilter()).toBe(false);
+    expect(el().querySelector('.features-select')).toBeNull();
   });
 
-  it('should hide flags filter when disabled', async () => {
-    await setup({ hasFlagsFilter: false, availableFlags: [{ id: 'a', name: 'alpha' }] });
-    expect(component.showFlagsFilter()).toBe(false);
-  });
-
-  it('should show flags filter and build lookup options', async () => {
+  it('should hide features filter when disabled', async () => {
     await setup({
-      availableFlags: [
-        { id: 'a', name: 'alpha' },
-        { id: 'b', name: 'beta' },
+      hasFeaturesFilter: false,
+      availableFeatures: [{ id: 'a', name: 'alpha', filter: { name: 'a' } }],
+    });
+    expect(component.showFeaturesFilter()).toBe(false);
+  });
+
+  it('should show features filter and build lookup options', async () => {
+    await setup({
+      availableFeatures: [
+        { id: 'o', name: 'obsolete', filter: { name: 'obsolete' } },
+        { id: 'd', name: 'draft', filter: { name: 'status', value: 'draft' } },
+        { id: 'r', name: 'red', filter: { name: 'color', value: 'red' } },
       ],
     });
-    expect(component.showFlagsFilter()).toBe(true);
-    expect(el().querySelector('.flags-select')).toBeTruthy();
-    expect(el().querySelector('.flag-mode-select')).toBeTruthy();
-    expect(component.flagMatchModes.map((m) => m.value)).toEqual([
-      TaxoStoreNodeFlagMatchMode.Any,
-      TaxoStoreNodeFlagMatchMode.All,
-      TaxoStoreNodeFlagMatchMode.None,
+    expect(component.showFeaturesFilter()).toBe(true);
+    expect(el().querySelector('.features-select')).toBeTruthy();
+    expect(el().querySelector('.feature-mode-select')).toBeTruthy();
+    expect(component.featureMatchModes.map((m) => m.value)).toEqual([
+      TaxoStoreNodeFeatureMatchMode.All,
+      TaxoStoreNodeFeatureMatchMode.Any,
+      TaxoStoreNodeFeatureMatchMode.None,
     ]);
+    expect(component.selectedFeatureMatchMode()).toBe(TaxoStoreNodeFeatureMatchMode.All);
     // no clear button without selection
-    expect(el().querySelector('button[aria-label="Clear flags"]')).toBeNull();
+    expect(el().querySelector('button[aria-label="Clear features"]')).toBeNull();
 
-    component.onFlagsChange(['a', 'b']);
-    component.onFlagMatchModeChange(TaxoStoreNodeFlagMatchMode.All);
+    // options are in their order, whatever the selection order; unknown
+    // IDs are ignored
+    component.onFeaturesChange(['r', 'o', 'x']);
+    component.onFeatureMatchModeChange(TaxoStoreNodeFeatureMatchMode.None);
     component.onTopNodeChange('plant');
     expect(component.lookupOptions()).toEqual({
       ancestorKey: 'plant',
-      flags: 'ab',
-      flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
+      features: [{ name: 'obsolete' }, { name: 'color', value: 'red' }],
+      featureMatchMode: TaxoStoreNodeFeatureMatchMode.None,
     });
     await fixture.whenStable();
 
-    const clear = el().querySelector<HTMLButtonElement>('button[aria-label="Clear flags"]')!;
+    const clear = el().querySelector<HTMLButtonElement>('button[aria-label="Clear features"]')!;
     expect(clear).toBeTruthy();
     clear.click();
-    expect(component.selectedFlags()).toEqual([]);
+    expect(component.selectedFeatures()).toEqual([]);
     component.onTopNodeChange(null);
     expect(component.lookupOptions()).toEqual({});
   });
@@ -244,7 +251,8 @@ describe('TaxoStorePicker', () => {
       key: 'animal.bird',
       label: 'birds',
       filteredLabel: 'birds',
-      flags: 'f',
+      features: [{ name: 'obsolete', value: '' }],
+      featuresSummary: 'obsolete',
       note: 'n',
       x: 1,
       y: 2,
@@ -261,7 +269,7 @@ describe('TaxoStorePicker', () => {
       key: 'animal.bird',
       label: 'birds',
       filteredLabel: 'birds',
-      flags: 'f',
+      features: [{ name: 'obsolete', value: '' }],
       note: 'n',
       x: 1,
       y: 2,

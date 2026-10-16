@@ -1,0 +1,89 @@
+:host {
+  display: block;
+}
+
+.toolbar {
+  margin: 8px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+}
+
+th,
+td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+  vertical-align: middle;
+}
+
+tr.edited {
+  background-color: var(--mat-sys-secondary-container, #dde3ea);
+  color: var(--mat-sys-on-secondary-container, #1a1c1e);
+}
+
+.fit-width {
+  width: 1px;
+  white-space: nowrap;
+}
+
+.name {
+  white-space: nowrap;
+}
+
+.value {
+  overflow-wrap: anywhere;
+}
+
+.delete-btn {
+  color: var(--mat-sys-error, #ba1a1a);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.empty-message {
+  color: var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6));
+}
+
+.feature-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  mat-form-field {
+    flex: 1 1 200px;
+  }
+
+  .name-field {
+    flex: 0 1 180px;
+  }
+
+  &.actions {
+    justify-content: flex-end;
+  }
+}
+
+mat-form-field {
+  width: 100%;
+}

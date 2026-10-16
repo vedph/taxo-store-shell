@@ -56,23 +56,34 @@
         </mat-form-field>
 
         <mat-form-field>
-          <mat-label>flags (optional)</mat-label>
-          <input matInput [formField]="form.flags" />
-          <mat-hint>Single characters for categorization</mat-hint>
-        </mat-form-field>
-
-        <mat-form-field>
           <mat-label>note (optional)</mat-label>
           <textarea matInput [formField]="form.note" rows="3"></textarea>
         </mat-form-field>
       </div>
     </mat-tab>
 
+    <!-- Features -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        Features ({{ features().length }})
+        @if (featureEditing() && selectedTab() !== 1) {
+          <mat-icon class="tab-icon" aria-hidden="false" aria-label="editing in progress"
+            >edit</mat-icon
+          >
+        }
+      </ng-template>
+
+      <ts-taxo-store-node-features
+        [features]="features()"
+        (featuresChange)="onFeaturesChange($event)"
+      />
+    </mat-tab>
+
     <!-- Mappings -->
     <mat-tab>
       <ng-template mat-tab-label>
         Mappings ({{ mappings().length }})
-        @if (mappingEditing() && selectedTab() !== 1) {
+        @if (mappingEditing() && selectedTab() !== 2) {
           <mat-icon class="tab-icon" aria-hidden="false" aria-label="editing in progress"
             >edit</mat-icon
           >
@@ -93,7 +104,7 @@
     type="button"
     mat-flat-button
     color="primary"
-    [disabled]="form().invalid() || mappingEditing()"
+    [disabled]="form().invalid() || childEditing()"
     (click)="save()"
   >
     {{ isNew ? 'Create' : 'Save' }}

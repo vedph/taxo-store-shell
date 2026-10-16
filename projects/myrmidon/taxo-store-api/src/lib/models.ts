@@ -67,6 +67,29 @@ export interface TaxoStoreNodeMapping {
 }
 
 /**
+ * A generic feature of a node, i.e. a name=value pair used to attach any
+ * attribute to it (e.g. status=draft). A node can have more features with
+ * the same name (e.g. son=Mark and son=Jane). A feature with an empty value
+ * can be used as a boolean marker (e.g. obsolete).
+ */
+export interface TaxoStoreNodeFeature {
+  /**
+   * The feature's name. Max 50 characters, and it cannot include `=` or
+   * `~`, which are reserved for the syntax of feature filters.
+   */
+  name: string;
+  /**
+   * The feature's value, which can be empty. Max 500 characters.
+   */
+  value?: string;
+  /**
+   * The optional filtered version of value, used for searching. When not
+   * set, the server falls back to value. Max 500 characters.
+   */
+  filteredValue?: string;
+}
+
+/**
  * A node in a TaxoStore tree.
  */
 export interface TaxoStoreNode {
@@ -96,12 +119,7 @@ export interface TaxoStoreNode {
    * The node's label after filtering has been applied.
    */
   filteredLabel: string;
-  /**
-   * Flags attached to this node. Each character in the string is a flag.
-   * For instance, <c>o</c>=obsolete, <c>d</c>=draft, etc. The value of
-   * each character is defined by consumer code.
-   */
-  flags?: string;
+
   /**
    * An optional note attached to the node.
    */
@@ -128,4 +146,11 @@ export interface TaxoStoreNode {
    * mappings untouched, while an array (even when empty) replaces them all.
    */
   mappings?: TaxoStoreNodeMapping[] | null;
+  /**
+   * The features of this node, in their order. When reading, these are
+   * present only when requested (includeFeatures), else they are null or
+   * undefined. When saving, null or undefined features leave the node's
+   * features untouched, while an array (even when empty) replaces them all.
+   */
+  features?: TaxoStoreNodeFeature[] | null;
 }

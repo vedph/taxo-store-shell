@@ -5,8 +5,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { DataPage, EnvService } from '@myrmidon/ngx-tools';
 
+import { TaxoStoreNodeFeatureMatchMode } from '../feature-filter';
 import { TaxoStoreNode, TaxoStoreTree } from '../models';
-import { TaxoStoreNodeFlagMatchMode, TaxoStoreService } from './taxo-store.service';
+import { TaxoStoreService } from './taxo-store.service';
 
 const API = 'http://test/api/';
 const URL = `${API}taxostore/`;
@@ -189,6 +190,27 @@ describe('TaxoStoreService', () => {
     await p;
   });
 
+  it('getNode should request features when specified', async () => {
+    const node: TaxoStoreNode = {
+      ...makeNode(3),
+      features: [
+        { name: 'son', value: 'Mark', filteredValue: 'mark' },
+        { name: 'son', value: 'Jane', filteredValue: 'jane' },
+      ],
+    };
+    const p = firstValueFrom(service.getNode(3, false, true));
+    http.expectOne(`${URL}nodes/3?includeFeatures=true`).flush(node);
+    expect(await p).toEqual(node);
+  });
+
+  it('getNodeFromKey should request mappings and features when specified', async () => {
+    const p = firstValueFrom(service.getNodeFromKey('t', 'k', true, true));
+    http
+      .expectOne(`${URL}nodes/tree/t/key/k?includeMappings=true&includeFeatures=true`)
+      .flush(makeNode(1));
+    await p;
+  });
+
   it('getNode should return null on 404', async () => {
     const p = firstValueFrom(service.getNode(999));
     http.expectOne(`${URL}nodes/999`).flush(null, { status: 404, statusText: 'Not Found' });
@@ -215,12 +237,12 @@ describe('TaxoStoreService', () => {
       service.getNodes({
         pageNumber: 1,
         pageSize: 10,
-        flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+        featureMatchMode: TaxoStoreNodeFeatureMatchMode.Any,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
-    expect(req.request.params.keys().sort()).toEqual(['flagMatchMode', 'pageNumber', 'pageSize']);
-    expect(req.request.params.get('flagMatchMode')).toBe('any');
+    // the match mode is useless without features
+    expect(req.request.params.keys().sort()).toEqual(['pageNumber', 'pageSize']);
     req.flush(makePage([makeNode(1)]));
     expect((await p).items.length).toBe(1);
   });
@@ -237,8 +259,13 @@ describe('TaxoStoreService', () => {
         ancestorKey: 'a.b',
         filteredLabel: 'Làb',
         filteredMappingLabel: ' MLab! ',
-        flags: 'ab',
-        flagMatchMode: TaxoStoreNodeFlagMatchMode.All,
+        features: [
+          { name: 'obsolete' },
+          { name: 'status', value: 'Dràft' },
+          { name: 'born', value: 'c. 384 BC', partial: true },
+          { name: 'empty', value: '' },
+        ],
+        featureMatchMode: TaxoStoreNodeFeatureMatchMode.Any,
         isLeaf: false,
         includePosition: true,
         isRoot: true,
@@ -246,6 +273,7 @@ describe('TaxoStoreService', () => {
         mappingScope: 'viaf',
         mappingTarget: '100',
         includeMappings: true,
+        includeFeatures: true,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
@@ -258,8 +286,15 @@ describe('TaxoStoreService', () => {
     expect(params.getAll('ancestorKey')).toEqual(['a.b']);
     expect(params.get('filteredLabel')).toBe('lab');
     expect(params.get('filteredMappingLabel')).toBe('mlab');
-    expect(params.get('flags')).toBe('ab');
-    expect(params.get('flagMatchMode')).toBe('all');
+    // values are filtered like stored values, keeping digits
+    expect(params.getAll('features')).toEqual([
+      'obsolete',
+      'status=draft',
+      'born~c. 384 bc',
+      'empty=',
+    ]);
+    expect(params.get('featureMatchMode')).toBe('any');
+    expect(params.get('includeFeatures')).toBe('true');
     expect(params.get('isLeaf')).toBe('false');
     expect(params.get('includePosition')).toBe('true');
     expect(params.get('isRoot')).toBe('true');
@@ -278,7 +313,6 @@ describe('TaxoStoreService', () => {
         pageSize: 10,
         filteredLabel: '123',
         filteredMappingLabel: ' ! ',
-        flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
@@ -288,23 +322,48 @@ describe('TaxoStoreService', () => {
     await p;
   });
 
+  it('getNodes should match only names of features with values left empty by filtering', async () => {
+    const p = firstValueFrom(
+      service.getNodes({
+        pageNumber: 1,
+        pageSize: 10,
+        features: [
+          { name: 'a', value: '!!', partial: true },
+          { name: ' ', value: 'x' },
+          { name: 'b', value: '#' },
+        ],
+      }),
+    );
+    const req = http.expectOne((r) => r.url === `${URL}nodes`);
+    // features without name are dropped
+    expect(req.request.params.getAll('features')).toEqual(['a', 'b']);
+    expect(req.request.params.has('featureMatchMode')).toBe(false);
+    req.flush(makePage([]));
+    await p;
+  });
+
   it('getNodes should omit false boolean options', async () => {
     const p = firstValueFrom(
       service.getNodes({
         pageNumber: 1,
         pageSize: 10,
-        flagMatchMode: TaxoStoreNodeFlagMatchMode.None,
+        features: [],
+        featureMatchMode: TaxoStoreNodeFeatureMatchMode.None,
         includePosition: false,
         isRoot: false,
         matchDescendants: false,
         includeMappings: false,
+        includeFeatures: false,
       }),
     );
     const req = http.expectOne((r) => r.url === `${URL}nodes`);
+    expect(req.request.params.has('features')).toBe(false);
+    expect(req.request.params.has('featureMatchMode')).toBe(false);
     expect(req.request.params.has('includePosition')).toBe(false);
     expect(req.request.params.has('isRoot')).toBe(false);
     expect(req.request.params.has('matchDescendants')).toBe(false);
     expect(req.request.params.has('includeMappings')).toBe(false);
+    expect(req.request.params.has('includeFeatures')).toBe(false);
     req.flush(makePage([]));
     await p;
   });
@@ -336,6 +395,30 @@ describe('TaxoStoreService', () => {
     expect(req.request.params.get('includeMappings')).toBe('true');
     req.flush(makePage([]));
     await p;
+  });
+
+  it('getRootNodes should request features when specified', async () => {
+    const p = firstValueFrom(
+      service.getRootNodes('t', { pageNumber: 1, pageSize: 5 }, true, false, true),
+    );
+    const req = http.expectOne((r) => r.url === `${URL}nodes/roots/t`);
+    expect(req.request.params.get('includePosition')).toBe('true');
+    expect(req.request.params.has('includeMappings')).toBe(false);
+    expect(req.request.params.get('includeFeatures')).toBe('true');
+    req.flush(makePage([]));
+    await p;
+  });
+
+  it('addNode should post the features of the node', async () => {
+    const node: TaxoStoreNode = {
+      ...makeNode(5),
+      features: [{ name: 'obsolete', value: '' }],
+    };
+    const p = firstValueFrom(service.addNode(node));
+    const req = http.expectOne(`${URL}nodes`);
+    expect(req.request.body.features).toEqual([{ name: 'obsolete', value: '' }]);
+    req.flush(5);
+    expect(await p).toBe(5);
   });
 
   it('addNode should post the mappings of the node', async () => {

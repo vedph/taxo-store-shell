@@ -6,10 +6,11 @@ import { PagedListStoreService } from '@myrmidon/paged-data-browsers';
 import {
   TaxoStoreService,
   TaxoStoreNode,
-  TaxoStoreNodeFlagMatchMode,
+  TaxoStoreNodeFeatureMatchMode,
 } from '@myrmidon/taxo-store-api';
 
 import {
+  hasTaxoFeatureFilter,
   TaxoStoreNodeTreeFilter,
   TaxoStoreTreeNode,
   toTaxoStoreTreeNode,
@@ -55,7 +56,7 @@ export class TaxoStorePagedListService implements PagedListStoreService<
    *
    * @param pageNumber The page number (1-based).
    * @param pageSize The page size.
-   * @param filter The filter to apply (label and/or flags).
+   * @param filter The filter to apply (label and/or features).
    * @returns Observable of a page of nodes.
    */
   public loadPage(
@@ -74,9 +75,10 @@ export class TaxoStorePagedListService implements PagedListStoreService<
     }
 
     // without filters, just get the root nodes
-    if (!filter.label && !filter.flags) {
+    const hasFeatures = hasTaxoFeatureFilter(filter);
+    if (!filter.label && !hasFeatures) {
       return this._treeStoreService
-        .getRootNodes(this._treeId, { pageNumber, pageSize })
+        .getRootNodes(this._treeId, { pageNumber, pageSize }, false, false, true)
         .pipe(map((page) => this.mapPage(page)));
     }
 
@@ -88,8 +90,11 @@ export class TaxoStorePagedListService implements PagedListStoreService<
         isRoot: true,
         filteredLabel: filter.label || undefined,
         filteredMappingLabel: filter.label || undefined,
-        flags: filter.flags || undefined,
-        flagMatchMode: TaxoStoreNodeFlagMatchMode.Any,
+        features: hasFeatures ? filter.features : undefined,
+        featureMatchMode: hasFeatures
+          ? (filter.featureMatchMode ?? TaxoStoreNodeFeatureMatchMode.All)
+          : undefined,
+        includeFeatures: true,
       })
       .pipe(map((page) => this.mapPage(page)));
   }
